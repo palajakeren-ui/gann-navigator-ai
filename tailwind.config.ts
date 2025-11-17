@@ -57,6 +57,35 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        bullish: {
+          DEFAULT: "hsl(var(--bullish))",
+          foreground: "hsl(var(--bullish-foreground))",
+        },
+        bearish: {
+          DEFAULT: "hsl(var(--bearish))",
+          foreground: "hsl(var(--bearish-foreground))",
+        },
+        neutral: {
+          DEFAULT: "hsl(var(--neutral))",
+          foreground: "hsl(var(--neutral-foreground))",
+        },
+        gann: {
+          primary: "hsl(var(--gann-primary))",
+          secondary: "hsl(var(--gann-secondary))",
+          support: "hsl(var(--gann-support))",
+          resistance: "hsl(var(--gann-resistance))",
+        },
+        chart: {
+          grid: "hsl(var(--chart-grid))",
+          text: "hsl(var(--chart-text))",
+          highlight: "hsl(var(--chart-highlight))",
+        },
+        status: {
+          success: "hsl(var(--status-success))",
+          warning: "hsl(var(--status-warning))",
+          error: "hsl(var(--status-error))",
+          info: "hsl(var(--status-info))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
