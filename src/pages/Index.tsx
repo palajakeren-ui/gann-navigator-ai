@@ -299,19 +299,19 @@ const mockData = {
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-6">
+    <div className="min-h-screen bg-background p-4 lg:p-6 animate-fade-in">
       <div className="max-w-[1920px] mx-auto space-y-4">
         <TradingHeader {...mockData.header} />
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced Analysis</TabsTrigger>
-            <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
-            <TabsTrigger value="risk">Risk & Position</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
+            <TabsTrigger value="overview" className="transition-all hover-scale">Overview</TabsTrigger>
+            <TabsTrigger value="advanced" className="transition-all hover-scale">Advanced Analysis</TabsTrigger>
+            <TabsTrigger value="forecasting" className="transition-all hover-scale">Forecasting</TabsTrigger>
+            <TabsTrigger value="risk" className="transition-all hover-scale">Risk & Position</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="overview" className="space-y-4">
+          <TabsContent value="overview" className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2 space-y-4">
                 <GannAnalysisPanel {...mockData.gann} />
@@ -334,24 +334,24 @@ const Index = () => {
               <div className="space-y-4">
                 <SignalPanel {...mockData.signal} />
                 
-                <div className="bg-card border border-border rounded-lg p-6">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Backend Integration</h3>
+                <div className="bg-card border border-border rounded-lg p-6 hover-glow transition-all animate-fade-in">
+                  <h3 className="text-lg font-bold text-foreground mb-4 gradient-text">Backend Integration</h3>
                   <div className="space-y-3 text-sm">
-                    <div className="p-3 bg-secondary/30 rounded">
+                    <div className="p-3 bg-secondary/30 rounded hover-scale transition-all">
                       <p className="text-muted-foreground mb-1">API Endpoint</p>
                       <code className="text-xs font-mono text-primary break-all">
                         http://localhost:8000/api/analysis
                       </code>
                     </div>
                     
-                    <div className="p-3 bg-secondary/30 rounded">
+                    <div className="p-3 bg-secondary/30 rounded hover-scale transition-all">
                       <p className="text-muted-foreground mb-1">WebSocket</p>
                       <code className="text-xs font-mono text-primary break-all">
                         ws://localhost:8000/ws/live-feed
                       </code>
                     </div>
                     
-                    <div className="p-3 bg-status-info/10 border border-status-info/30 rounded">
+                    <div className="p-3 bg-status-info/10 border border-status-info/30 rounded hover-scale transition-all">
                       <p className="text-xs text-muted-foreground">
                         Connect this UI to your Python backend by implementing the API calls in the components.
                         Current data shown is mock data for demonstration.
@@ -363,7 +363,7 @@ const Index = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="advanced" className="space-y-4">
+          <TabsContent value="advanced" className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <GannGeometryPanel {...mockData.gannGeometry} />
               <TimeCyclesPanel {...mockData.timeCycles} />
@@ -372,7 +372,7 @@ const Index = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="forecasting" className="space-y-4">
+          <TabsContent value="forecasting" className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ForecastPanel 
                 shortTermForecast={mockData.forecast.shortTerm}
@@ -389,7 +389,7 @@ const Index = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="risk" className="space-y-4">
+          <TabsContent value="risk" className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <PositionSizePanel {...mockData.positionSize} />
               <OptionsPanel {...mockData.options} />

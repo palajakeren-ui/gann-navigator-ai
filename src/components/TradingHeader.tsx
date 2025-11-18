@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Activity } from "lucide-react";
 
 interface TradingHeaderProps {
   symbol: string;
@@ -21,45 +22,56 @@ export const TradingHeader = ({
   timestamp,
 }: TradingHeaderProps) => {
   return (
-    <Card className="p-4 mb-4 border-border bg-card">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <Card className="p-4 lg:p-6 border-border bg-card animate-fade-in hover-glow transition-all duration-300">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{symbol}</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold gradient-text">
+              {symbol}
+            </h1>
             <p className="text-sm text-muted-foreground">{broker}</p>
           </div>
-          <Badge variant="outline" className="text-primary border-primary">
+          <Badge className="bg-primary text-primary-foreground animate-pulse-glow">
             Live Analysis
           </Badge>
         </div>
         
-        <div className="flex gap-6 text-sm">
-          <div>
-            <p className="text-muted-foreground">Account Balance</p>
-            <p className="text-lg font-semibold text-foreground">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-2 lg:p-3 bg-secondary/30 rounded hover-scale transition-all">
+            <p className="text-xs text-muted-foreground mb-1">Account Balance</p>
+            <p className="text-sm lg:text-base font-bold text-foreground">
               ${accountBalance.toLocaleString()}
             </p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Risk/Trade</p>
-            <p className="text-lg font-semibold text-foreground">
-              {riskPerTrade}% (${(accountBalance * riskPerTrade / 100).toLocaleString()})
+          
+          <div className="p-2 lg:p-3 bg-secondary/30 rounded hover-scale transition-all">
+            <p className="text-xs text-muted-foreground mb-1">Risk/Trade</p>
+            <p className="text-sm lg:text-base font-bold text-primary">
+              {riskPerTrade}%
             </p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Leverage</p>
-            <p className="text-lg font-semibold text-primary">{leverage}x</p>
+          
+          <div className="p-2 lg:p-3 bg-secondary/30 rounded hover-scale transition-all">
+            <p className="text-xs text-muted-foreground mb-1">Leverage</p>
+            <p className="text-sm lg:text-base font-bold text-foreground">
+              {leverage}x
+            </p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Lot Size</p>
-            <p className="text-lg font-semibold text-foreground">{lotSize}</p>
+          
+          <div className="p-2 lg:p-3 bg-secondary/30 rounded hover-scale transition-all">
+            <p className="text-xs text-muted-foreground mb-1">Lot Size</p>
+            <p className="text-sm lg:text-base font-bold text-foreground">
+              {lotSize}
+            </p>
           </div>
         </div>
-        
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">Last Update</p>
-          <p className="text-sm font-mono text-foreground">{timestamp}</p>
-        </div>
+      </div>
+      
+      <div className="mt-4 pt-4 border-t border-border/50">
+        <p className="text-xs text-muted-foreground flex items-center gap-2">
+          <Activity className="w-3 h-3" />
+          Last Update: {timestamp}
+        </p>
       </div>
     </Card>
   );

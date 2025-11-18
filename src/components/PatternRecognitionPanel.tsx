@@ -26,24 +26,24 @@ export const PatternRecognitionPanel = ({
   };
   
   return (
-    <Card className="p-6 border-border bg-card">
+    <Card className="p-6 border-border bg-card hover-glow transition-all duration-300 animate-fade-in">
       <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-        <Target className="w-5 h-5 text-primary" />
-        Pattern Recognition — (dengan Price & Time)
+        <Target className="w-5 h-5 text-primary animate-pulse" />
+        <span className="gradient-text">Pattern Recognition — (dengan Price & Time)</span>
       </h2>
       
       <div className="space-y-3 mb-6">
         {patterns.map((pattern, idx) => (
           <div 
             key={idx} 
-            className={`p-4 border-l-4 rounded ${getPatternColor(pattern.confidence)} bg-secondary/20`}
+            className={`p-4 border-l-4 rounded ${getPatternColor(pattern.confidence)} bg-secondary/20 hover-scale transition-all hover:bg-secondary/30`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-foreground">{pattern.name}</span>
                 <Badge variant="outline" className="text-xs">{pattern.type}</Badge>
               </div>
-              <Badge className={getPatternColor(pattern.confidence)}>
+              <Badge className={`${getPatternColor(pattern.confidence)} animate-pulse`}>
                 {(pattern.confidence * 100).toFixed(0)}%
               </Badge>
             </div>
@@ -60,9 +60,9 @@ export const PatternRecognitionPanel = ({
         ))}
       </div>
       
-      <div className="p-4 bg-primary/5 border border-primary/20 rounded">
+      <div className="p-4 bg-primary/5 border border-primary/20 rounded hover-glow transition-all">
         <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" />
+          <TrendingUp className="w-4 h-4 animate-pulse" />
           Pattern Summary
         </p>
         <div className="space-y-2">
