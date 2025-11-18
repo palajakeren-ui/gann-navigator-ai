@@ -37,13 +37,13 @@ export const IndicatorGrid = ({ title, indicators, compositeScore }: IndicatorGr
   };
   
   return (
-    <Card className="p-6 border-border bg-card">
+    <Card className="p-6 border-border bg-card hover-glow transition-all duration-300 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-foreground">{title}</h2>
         {compositeScore !== undefined && (
           <Badge 
             variant="outline" 
-            className={compositeScore > 0.7 ? "border-bullish text-bullish" : compositeScore < 0.3 ? "border-bearish text-bearish" : "border-neutral text-neutral-foreground"}
+            className={`animate-pulse-glow ${compositeScore > 0.7 ? "border-bullish text-bullish" : compositeScore < 0.3 ? "border-bearish text-bearish" : "border-neutral text-neutral-foreground"}`}
           >
             Score: {(compositeScore * 100).toFixed(0)}%
           </Badge>
@@ -54,7 +54,7 @@ export const IndicatorGrid = ({ title, indicators, compositeScore }: IndicatorGr
         {indicators.map((indicator, idx) => (
           <div 
             key={idx} 
-            className="flex items-center justify-between p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-colors"
+            className="flex items-center justify-between p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-all hover-scale"
           >
             <div className="flex items-center gap-3 flex-1">
               <span className="text-sm font-medium text-foreground">{indicator.name}</span>

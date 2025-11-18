@@ -26,18 +26,18 @@ export const SignalPanel = ({
   
   return (
     <Card className={cn(
-      "p-6 border-2",
-      isBullish ? "border-bullish bg-bullish/5" : "border-bearish bg-bearish/5"
+      "p-6 border-2 transition-all duration-300 hover-glow animate-fade-in",
+      isBullish ? "border-bullish bg-bullish/5 hover:bg-bullish/10" : "border-bearish bg-bearish/5 hover:bg-bearish/10"
     )}>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           {isBullish ? (
-            <ArrowUpRight className="w-8 h-8 text-bullish" />
+            <ArrowUpRight className="w-8 h-8 text-bullish animate-pulse" />
           ) : (
-            <ArrowDownRight className="w-8 h-8 text-bearish" />
+            <ArrowDownRight className="w-8 h-8 text-bearish animate-pulse" />
           )}
           <div>
-            <h2 className="text-2xl font-bold text-foreground">{direction}</h2>
+            <h2 className="text-2xl font-bold text-foreground gradient-text">{direction}</h2>
             <p className="text-sm text-muted-foreground">Final Trading Signal</p>
           </div>
         </div>
@@ -47,40 +47,40 @@ export const SignalPanel = ({
             <TrendingUp className="w-4 h-4 text-primary" />
             <span className="text-sm text-muted-foreground">Strength</span>
           </div>
-          <Badge variant="outline" className="text-lg border-primary text-primary">
+          <Badge variant="outline" className="text-lg border-primary text-primary animate-pulse-glow">
             {(strength * 100).toFixed(0)}%
           </Badge>
         </div>
       </div>
       
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-secondary/50 p-3 rounded">
+        <div className="bg-secondary/50 p-3 rounded hover-scale transition-all">
           <p className="text-xs text-muted-foreground mb-1">Confidence</p>
           <p className="text-xl font-bold text-primary">{(confidence * 100).toFixed(0)}%</p>
         </div>
         
-        <div className="bg-secondary/50 p-3 rounded">
+        <div className="bg-secondary/50 p-3 rounded hover-scale transition-all">
           <p className="text-xs text-muted-foreground mb-1">Risk/Reward</p>
           <p className="text-xl font-bold text-gann-primary">1:{riskReward.toFixed(1)}</p>
         </div>
       </div>
       
       <div className="space-y-3">
-        <div className="flex justify-between items-center p-2 bg-secondary/30 rounded">
+        <div className="flex justify-between items-center p-2 bg-secondary/30 rounded hover-scale transition-all">
           <span className="text-sm text-muted-foreground">Entry Price</span>
           <span className="text-lg font-mono font-semibold text-foreground">
             ${entry.toLocaleString()}
           </span>
         </div>
         
-        <div className="flex justify-between items-center p-2 bg-bearish/10 rounded border border-bearish/30">
+        <div className="flex justify-between items-center p-2 bg-bearish/10 rounded border border-bearish/30 hover-scale transition-all">
           <span className="text-sm text-bearish">Stop Loss</span>
           <span className="text-lg font-mono font-semibold text-bearish">
             ${stopLoss.toLocaleString()}
           </span>
         </div>
         
-        <div className="flex justify-between items-center p-2 bg-bullish/10 rounded border border-bullish/30">
+        <div className="flex justify-between items-center p-2 bg-bullish/10 rounded border border-bullish/30 hover-scale transition-all">
           <span className="text-sm text-bullish">Take Profit</span>
           <span className="text-lg font-mono font-semibold text-bullish">
             ${takeProfit.toLocaleString()}

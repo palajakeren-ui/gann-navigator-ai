@@ -22,17 +22,18 @@ export const SupplyDemandPanel = ({ zones }: SupplyDemandPanelProps) => {
   };
   
   return (
-    <Card className="p-6 border-border bg-card">
+    <Card className="p-6 border-border bg-card hover-glow transition-all duration-300 animate-fade-in">
       <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-        <Layers className="w-5 h-5 text-primary" />
-        Gann Supply & Demand Zones & TIME
+        <Layers className="w-5 h-5 text-primary animate-pulse" />
+        <span className="gradient-text">Gann Supply & Demand Zones & TIME</span>
       </h2>
       
       <div className="space-y-3">
         {zones.map((zone, idx) => (
           <div 
             key={idx} 
-            className={`p-4 border-2 rounded ${getZoneColor(zone.type)}`}
+            className={`p-4 border-2 rounded ${getZoneColor(zone.type)} hover-glow transition-all hover-scale animate-fade-in`}
+            style={{ animationDelay: `${idx * 100}ms` }}
           >
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -42,7 +43,7 @@ export const SupplyDemandPanel = ({ zones }: SupplyDemandPanelProps) => {
                 </div>
               </div>
               <div className="text-right">
-                <Badge variant="outline" className="mb-1">{zone.type}</Badge>
+                <Badge variant="outline" className="mb-1 animate-pulse">{zone.type}</Badge>
                 <div className="text-xs font-semibold text-primary">{zone.strength}</div>
               </div>
             </div>
@@ -54,7 +55,7 @@ export const SupplyDemandPanel = ({ zones }: SupplyDemandPanelProps) => {
         ))}
       </div>
       
-      <div className="mt-4 p-3 bg-secondary/30 rounded text-xs text-muted-foreground">
+      <div className="mt-4 p-3 bg-secondary/30 rounded text-xs text-muted-foreground hover-scale transition-all">
         <p>
           <span className="font-semibold text-foreground">Catatan:</span> Equilibrium (balance point) sama dengan pivot Square of 52. 
           Zona 90°–180° sering menandai transisi Demand→Supply pada TF mingguan; 
