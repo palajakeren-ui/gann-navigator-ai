@@ -1,4 +1,7 @@
 import { TradingHeader } from "@/components/TradingHeader";
+import { NavigationMenu } from "@/components/NavigationMenu";
+import { TradingChart } from "@/components/charts/TradingChart";
+import { CalculationDemo } from "@/components/CalculationDemo";
 import { GannAnalysisPanel } from "@/components/GannAnalysisPanel";
 import { GannGeometryPanel } from "@/components/GannGeometryPanel";
 import { SignalPanel } from "@/components/SignalPanel";
@@ -299,13 +302,18 @@ const mockData = {
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-6 animate-fade-in">
-      <div className="max-w-[1920px] mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <NavigationMenu />
+      
+      <div className="max-w-[1920px] mx-auto p-4 lg:p-6 space-y-4 animate-fade-in">
         <TradingHeader {...mockData.header} />
         
+        <TradingChart />
+        
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
             <TabsTrigger value="overview" className="transition-all hover-scale">Overview</TabsTrigger>
+            <TabsTrigger value="calculations" className="transition-all hover-scale">Calculations</TabsTrigger>
             <TabsTrigger value="advanced" className="transition-all hover-scale">Advanced Analysis</TabsTrigger>
             <TabsTrigger value="forecasting" className="transition-all hover-scale">Forecasting</TabsTrigger>
             <TabsTrigger value="risk" className="transition-all hover-scale">Risk & Position</TabsTrigger>
@@ -361,6 +369,10 @@ const Index = () => {
                 </div>
               </div>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="calculations" className="space-y-4 animate-fade-in">
+            <CalculationDemo />
           </TabsContent>
           
           <TabsContent value="advanced" className="space-y-4 animate-fade-in">
