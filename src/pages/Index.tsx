@@ -1,410 +1,562 @@
+import { useState, useEffect } from "react";
 import { TradingHeader } from "@/components/TradingHeader";
 import { NavigationMenu } from "@/components/NavigationMenu";
 import { TradingChart } from "@/components/charts/TradingChart";
-import { CalculationDemo } from "@/components/CalculationDemo";
-import { GannAnalysisPanel } from "@/components/GannAnalysisPanel";
-import { GannGeometryPanel } from "@/components/GannGeometryPanel";
-import { SignalPanel } from "@/components/SignalPanel";
-import { IndicatorGrid } from "@/components/IndicatorGrid";
-import { PlanetaryPanel } from "@/components/PlanetaryPanel";
-import { TimeCyclesPanel } from "@/components/TimeCyclesPanel";
-import { PatternRecognitionPanel } from "@/components/PatternRecognitionPanel";
-import { ForecastPanel } from "@/components/ForecastPanel";
-import { SupplyDemandPanel } from "@/components/SupplyDemandPanel";
-import { OptionsPanel } from "@/components/OptionsPanel";
-import { PositionSizePanel } from "@/components/PositionSizePanel";
+import { LiveMarketCard } from "@/components/dashboard/LiveMarketCard";
+import { SignalStrengthCard } from "@/components/dashboard/SignalStrengthCard";
+import { GannLevelsCard } from "@/components/dashboard/GannLevelsCard";
+import { PlanetaryCard } from "@/components/dashboard/PlanetaryCard";
+import { EhlersIndicatorsCard } from "@/components/dashboard/EhlersIndicatorsCard";
+import { MLPredictionsCard } from "@/components/dashboard/MLPredictionsCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { 
+  useRealTimeData, 
+  useGannLevels, 
+  useSignalGenerator, 
+  usePlanetaryData, 
+  useEhlersIndicators, 
+  useMLPredictions 
+} from "@/hooks/useRealTimeData";
+import { 
+  TrendingUp, TrendingDown, Activity, Target, Clock, 
+  RefreshCw, Wifi, Settings, BarChart3, Calendar,
+  Sparkles, Moon, Brain, Zap, Shield
+} from "lucide-react";
 
-// Comprehensive mock data based on the institutional output template
-const mockData = {
-  header: {
-    symbol: "BTCUSD",
-    broker: "Binance Futures, MetaTrader 5",
-    accountBalance: 100000,
-    riskPerTrade: 2,
-    leverage: 5,
-    lotSize: 0.19,
-    timestamp: "2025-11-05 15:25:00 UTC",
-  },
-  gann: {
-    supports: [103500, 103800, 104100],
-    resistances: [104500, 104800, 105100],
-    position: 0.68,
-    angles: [
-      { angle: "1x1", level: 104200, strength: 0.93, confidence: 0.93 },
-      { angle: "2x1", level: 104300, strength: 0.89, confidence: 0.89 },
-      { angle: "1x2", level: 104700, strength: 0.91, confidence: 0.91 },
-      { angle: "3x1", level: 105200, strength: 0.85, confidence: 0.85 },
-      { angle: "1x3", level: 104000, strength: 0.87, confidence: 0.87 },
-    ],
-  },
-  gannGeometry: {
-    squares: [
-      {
-        name: "Square of 52 (Weekly Cycle)",
-        type: "Weekly",
-        midpoint: 104600,
-        note: "equilibrium pivot",
-      },
-      {
-        name: "Square of 144 (Daily Time Spiral)",
-        type: "Daily",
-        target: 105100,
-        note: "360° rotation target resistance",
-      },
-      {
-        name: "Square of 360 (Full Year Vibration)",
-        type: "Yearly",
-        target: 105500,
-        note: "full cycle completion",
-      },
-    ],
-    square90Levels: [
-      { degree: 90, price: 103800, type: "support" as const },
-      { degree: 180, price: 104500, type: "resistance" as const },
-      { degree: 270, price: 105100, type: "reversal" as const },
-    ],
-    hexagonLevels: [
-      { degree: 60, price: 103800, type: "support harmonic" },
-      { degree: 120, price: 104500, type: "resistance harmonic" },
-      { degree: 180, price: 105100, type: "full hexagon pivot" },
-    ],
-    gannFanAngles: [
-      { ratio: "8x1", price: 104000, slope: 82, type: "support" as const },
-      { ratio: "4x1", price: 104100, slope: 76, type: "support" as const },
-      { ratio: "1x1", price: 104200, slope: 45, type: "support" as const },
-      { ratio: "2x1", price: 104300, slope: 26.5, type: "support" as const },
-      { ratio: "1x2", price: 104700, slope: 63.5, type: "resistance" as const },
-      { ratio: "3x1", price: 105200, slope: 18, type: "resistance" as const },
-      { ratio: "1x3", price: 104000, slope: 18.4, type: "support" as const },
-      { ratio: "1x4", price: 104150, slope: 14, type: "resistance" as const },
-      { ratio: "1x8", price: 104050, slope: 7, type: "resistance" as const },
-    ],
-  },
-  signal: {
-    direction: "BUY" as const,
-    strength: 0.91,
-    confidence: 0.82,
-    entry: 104525,
-    stopLoss: 103700,
-    takeProfit: 105000,
-    riskReward: 2.3,
-  },
-  timeCycles: {
-    cycles: [
-      { period: "1 hari", confidence: 0, status: "muted" as const },
-      { period: "7 hari", confidence: 0.88, status: "active" as const },
-      { period: "21 hari", confidence: 0.96, status: "active" as const },
-      { period: "30 hari", confidence: 0, status: "muted" as const },
-      { period: "90 hari", confidence: 0.92, status: "active" as const },
-    ],
-    dominantPeriod: 24.0,
-    amplitude: "tinggi",
-    phase: 0.85,
-    interpretation: "Ada high-probability window untuk rally ke 104,700 lalu reversal minor sebelum akhir siklus 30 hari.",
-  },
-  patterns: {
-    patterns: [
-      {
-        name: "Bullish Engulfing",
-        type: "Candlestick",
-        confidence: 0.88,
-        priceRange: "Konfirmasi: 104,100",
-        timeWindow: "valid pada 2025-11-04 15:25:00–16:25:00 UTC",
-      },
-      {
-        name: "Morning Star",
-        type: "Candlestick",
-        confidence: 0.80,
-        priceRange: "Level: 104,325",
-        timeWindow: "2025-11-03 → 2025-11-04 (daily close)",
-      },
-      {
-        name: "Elliott Wave — Wave 3 (impulse)",
-        type: "Wave Structure",
-        confidence: 0.85,
-        priceRange: "Target: 104,700",
-        timeWindow: "next 7–14 days (peak ~2025-11-11)",
-      },
-      {
-        name: "Gann Wave — Uptrend Cycle 3",
-        type: "Time–Price Wave",
-        confidence: 0.83,
-        priceRange: "Projection: 105,500 (reversal area)",
-        timeWindow: "~2025-11-16 ±6–12 hours",
-      },
-      {
-        name: "Harmonic AB=CD (confluence)",
-        type: "Harmonic Pattern",
-        confidence: 0.76,
-        priceRange: "Range: 103,800 → 104,700",
-        timeWindow: "5–8 days to completion",
-      },
-    ],
-    summary: [
-      "Bullish Engulfing pada 104,100 (konfirmasi intraday 2025-11-04 15:25:00 UTC) memberikan sinyal masuk awal.",
-      "Morning Star pada area 104,325 memperkuat setup bagi Wave 3 impulsif — target terukur 104,700 dalam 7–14 hari.",
-      "Gann Wave menunjuk reversal window kuat sekitar 2025-11-16 (target 105,500) — gunakan untuk manajemen TP bagian/scale-out.",
-    ],
-  },
-  ehlers: {
-    indicators: [
-      { name: "Fisher Transform", signal: "Bullish Cross", value: "1.33", confidence: 0.93 },
-      { name: "Smoothed RSI", signal: "Bullish", value: "67.2", confidence: 0.87 },
-      { name: "Super Smoother", signal: "Trend Up", value: "+0.024", confidence: 0.85 },
-      { name: "MAMA (MESA Adaptive)", signal: "Bullish", value: "104,400", confidence: 0.90 },
-      { name: "Instantaneous Trendline", signal: "Uptrend", value: "104,100", confidence: 0.89 },
-      { name: "Cyber Cycle", signal: "Rising", value: "+0.026", confidence: 0.86 },
-      { name: "Dominant Cycle", signal: "Strong", value: "24.0 hari", confidence: 0.96 },
-      { name: "Sinewave Indicator", signal: "Bullish phase", value: "+0.021", confidence: 0.84 },
-      { name: "Roofing Filter", signal: "Uptrend noise", value: "+0.017", confidence: 0.80 },
-      { name: "Decycler", signal: "Bullish", value: "+0.028", confidence: 0.82 },
-    ],
-    compositeScore: 0.88,
-  },
-  ml: {
-    indicators: [
-      { name: "XGBoost", signal: "Bullish", value: "104,700", confidence: 0.86 },
-      { name: "Random Forest", signal: "Bullish", value: "104,650", confidence: 0.84 },
-      { name: "LSTM", signal: "Bullish", value: "104,720", confidence: 0.89 },
-      { name: "Neural ODE", signal: "Bullish", value: "104,680", confidence: 0.85 },
-      { name: "Gradient Boosting", signal: "Bullish", value: "104,710", confidence: 0.87 },
-      { name: "LightGBM", signal: "Bullish", value: "104,695", confidence: 0.85 },
-      { name: "Hybrid Meta-Model", signal: "Bullish", value: "104,700", confidence: 0.88 },
-    ],
-    compositeScore: 0.88,
-  },
-  planetary: {
-    bullishAspects: [
-      { aspect: "Jupiter–Venus Trine (120°)", score: 0.42 },
-      { aspect: "Mercury–Neptune Sextile (60°)", score: 0.32 },
-    ],
-    bearishAspects: [{ aspect: "Saturn–Mars Square (90°)", score: -0.38 }],
-    totalScore: 0.36,
-    planets: [
-      { name: "Jupiter", sign: "Leo", degree: 128, note: "±5° dari 120° → vibrasi positif" },
-      { name: "Venus", sign: "Cancer", degree: 98, note: "±5° dari 90° → harmonik" },
-      { name: "Saturn", sign: "Libra", degree: 188, note: "±5° dari 180° → tekanan reversal" },
-    ],
-    retrograde: [
-      { planet: "Mercury", period: "2025-11-01 → 2025-11-25", note: "volatilitas tinggi, false breakout risk" },
-      { planet: "Saturn", period: "2025-06-30 → 2025-11-15", note: "penundaan/drag tren makro" },
-    ],
-  },
-  forecast: {
-    shortTerm: [
-      { date: "2025-11-05", price: 104652, probability: 0.62, note: "1x1 angle support" },
-      { date: "2025-11-06", price: 104976, probability: 0.67, note: "Square of 9 confluence" },
-      { date: "2025-11-07", price: 104679, probability: 0.60, note: "2x1 angle test" },
-      { date: "2025-11-08", price: 104998, probability: 0.65, note: "Square of 90 harmonic" },
-      { date: "2025-11-09", price: 105322, probability: 0.70, note: "1x2 angle confluence" },
-      { date: "2025-11-12", price: 105105, probability: 0.75, note: "ATH window; quarter harmonic" },
-    ],
-    athAtl: [
-      {
-        type: "ATH" as const,
-        date: "2025-11-12 10:00 UTC",
-        price: 105105,
-        confidence: 0.86,
-        reversal: { date: "2025-11-16 13:40 UTC", price: 105505 },
-        aspect: "Mercury–Neptune Sextile (support)",
-        gannNote: "Quarter harmonic (Square of 90) + 1x2 angle confluence",
-      },
-      {
-        type: "ATL" as const,
-        date: "2025-11-16 13:40 UTC",
-        price: 104304,
-        confidence: 0.71,
-        reversal: { date: "2025-11-19 09:10 UTC", price: 104679 },
-        aspect: "Moon square Pluto (tekanan minor)",
-        gannNote: "300° cycle rotation with 1x3 angle support",
-      },
-      {
-        type: "ATH" as const,
-        date: "2026-03-15 10:00 UTC",
-        price: 150000,
-        confidence: 0.87,
-        reversal: { date: "2026-06-30 13:40 UTC", price: 165000 },
-        aspect: "Jupiter–Venus Trine (support)",
-        gannNote: "Quarter harmonic (Square of 90) + 1x2 angle confluence",
-      },
-      {
-        type: "ATH" as const,
-        date: "2028-05-01 13:40 UTC",
-        price: 250000,
-        confidence: 0.76,
-        reversal: { date: "2028-12-31 23:59 UTC", price: 280000 },
-        aspect: "N/A",
-        gannNote: "Post-halving peak; full Gann hexagon pivot",
-      },
-      {
-        type: "ATL" as const,
-        date: "2029-10-01 11:20 UTC",
-        price: 220000,
-        confidence: 0.73,
-        reversal: { date: "2029-12-31 23:59 UTC", price: 360000 },
-        aspect: "Saturn–Mars Square (tekanan)",
-        gannNote: "Bear cycle completion; Square of 52 retest",
-      },
-    ],
-  },
-  supplyDemand: {
-    zones: [
-      {
-        name: "Demand",
-        range: "103,500 – 103,800",
-        type: "Accumulation",
-        strength: "Strong",
-        note: "Square of 9 + 1x3 angle confluence",
-      },
-      {
-        name: "Supply",
-        range: "104,500 – 105,100",
-        type: "Distribution",
-        strength: "Strong",
-        note: "Square of 90 + 3x1 angle confluence",
-      },
-      {
-        name: "Mid-Range",
-        range: "104,525",
-        type: "Equilibrium",
-        strength: "Neutral",
-        note: "Square of 52 pivot balance point",
-      },
-    ],
-  },
-  options: {
-    bias: "CALL",
-    delta: 0.32,
-    expiry: "~14d",
-    ivr: 0.45,
-    recommendation: {
-      type: "BTCUSD-Call",
-      strike: 105000,
-      premium: 145.30,
-    },
-    riskReward: 2.2,
-  },
-  positionSize: {
-    accountEquity: 100000,
-    riskPerTrade: 2,
-    riskAmount: 2000,
-    dollarPerPoint: 1,
-    stopDistance: 825,
-    riskPerLot: 825,
-    calculatedLotSize: 2.42,
-    adjustedLotSize: 0.19,
-    leverage: 5,
-    entry: 104525,
-    stopLoss: 103700,
-  },
-};
+const timeframes = [
+  { label: "1M", value: "M1" },
+  { label: "5M", value: "M5" },
+  { label: "15M", value: "M15" },
+  { label: "30M", value: "M30" },
+  { label: "1H", value: "H1" },
+  { label: "4H", value: "H4" },
+  { label: "1D", value: "D1" },
+  { label: "1W", value: "W1" },
+  { label: "1MO", value: "MN" },
+];
+
+const watchlist = [
+  { symbol: "BTCUSD", name: "Bitcoin", basePrice: 104525 },
+  { symbol: "ETHUSD", name: "Ethereum", basePrice: 3890 },
+  { symbol: "XAUUSD", name: "Gold", basePrice: 2045 },
+  { symbol: "EURUSD", name: "Euro/USD", basePrice: 1.0875 },
+];
 
 const Index = () => {
+  const [activeTimeframe, setActiveTimeframe] = useState("H4");
+  const [activeSymbol, setActiveSymbol] = useState("BTCUSD");
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  // Real-time data hooks
+  const { data: marketData, isConnected } = useRealTimeData(activeSymbol, 104525, 2000);
+  const gannLevels = useGannLevels(marketData.price);
+  const signal = useSignalGenerator(marketData, gannLevels);
+  const planetaryData = usePlanetaryData();
+  const { indicators: ehlersIndicators, compositeScore: ehlersScore } = useEhlersIndicators([]);
+  const { predictions: mlPredictions, compositeScore: mlScore, consensusPrice } = useMLPredictions();
+
+  useEffect(() => {
+    const timer = setInterval(() => setLastUpdate(new Date()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate overall confluence score
+  const calculateConfluenceScore = () => {
+    const scores = [
+      signal?.strength || 0,
+      signal?.confidence || 0,
+      ehlersScore,
+      mlScore,
+      planetaryData.totalScore > 0 ? 0.6 + planetaryData.totalScore : 0.4,
+    ];
+    return scores.reduce((a, b) => a + b, 0) / scores.length;
+  };
+
+  const confluenceScore = calculateConfluenceScore();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <NavigationMenu />
       
       <div className="max-w-[1920px] mx-auto p-4 lg:p-6 space-y-4 animate-fade-in">
-        <TradingHeader {...mockData.header} />
-        
-        <TradingChart />
-        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">GANN AI Trading Dashboard</h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <span>Institutional Analysis System</span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                {isConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3 text-success animate-pulse" />
+                    <span className="text-success">Live</span>
+                  </>
+                ) : (
+                  <span className="text-destructive">Disconnected</span>
+                )}
+              </span>
+              <span>•</span>
+              <span>Last: {lastUpdate.toLocaleTimeString()}</span>
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Select value={activeSymbol} onValueChange={setActiveSymbol}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {watchlist.map(item => (
+                  <SelectItem key={item.symbol} value={item.symbol}>
+                    {item.symbol}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex gap-1 bg-secondary/30 p-1 rounded-lg">
+              {timeframes.map(tf => (
+                <Button
+                  key={tf.value}
+                  variant={activeTimeframe === tf.value ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveTimeframe(tf.value)}
+                  className="h-7 px-2 text-xs"
+                >
+                  {tf.label}
+                </Button>
+              ))}
+            </div>
+            
+            <Button variant="outline" size="icon">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Price</p>
+                <p className="text-lg font-bold">${marketData.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              </div>
+              {marketData.changePercent >= 0 ? (
+                <TrendingUp className="w-5 h-5 text-success" />
+              ) : (
+                <TrendingDown className="w-5 h-5 text-destructive" />
+              )}
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Signal</p>
+                <p className={`text-lg font-bold ${
+                  signal?.direction === 'BUY' ? 'text-success' : 
+                  signal?.direction === 'SELL' ? 'text-destructive' : 'text-muted-foreground'
+                }`}>
+                  {signal?.direction || 'WAIT'}
+                </p>
+              </div>
+              <Target className="w-5 h-5 text-primary" />
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Confluence</p>
+                <p className="text-lg font-bold text-primary">{(confluenceScore * 100).toFixed(0)}%</p>
+              </div>
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Ehlers</p>
+                <p className="text-lg font-bold text-success">{(ehlersScore * 100).toFixed(0)}%</p>
+              </div>
+              <Activity className="w-5 h-5 text-success" />
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">ML Score</p>
+                <p className="text-lg font-bold text-accent">{(mlScore * 100).toFixed(0)}%</p>
+              </div>
+              <Brain className="w-5 h-5 text-accent" />
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Astro</p>
+                <p className={`text-lg font-bold ${planetaryData.totalScore >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {planetaryData.totalScore >= 0 ? '+' : ''}{planetaryData.totalScore.toFixed(2)}
+                </p>
+              </div>
+              <Moon className="w-5 h-5 text-primary" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
-            <TabsTrigger value="overview" className="transition-all hover-scale">Overview</TabsTrigger>
-            <TabsTrigger value="calculations" className="transition-all hover-scale">Calculations</TabsTrigger>
-            <TabsTrigger value="advanced" className="transition-all hover-scale">Advanced Analysis</TabsTrigger>
-            <TabsTrigger value="forecasting" className="transition-all hover-scale">Forecasting</TabsTrigger>
-            <TabsTrigger value="risk" className="transition-all hover-scale">Risk & Position</TabsTrigger>
+            <TabsTrigger value="overview" className="flex items-center gap-1">
+              <BarChart3 className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-1">
+              <Sparkles className="w-4 h-4" />
+              Gann Analysis
+            </TabsTrigger>
+            <TabsTrigger value="indicators" className="flex items-center gap-1">
+              <Activity className="w-4 h-4" />
+              Indicators
+            </TabsTrigger>
+            <TabsTrigger value="forecast" className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              Forecast
+            </TabsTrigger>
+            <TabsTrigger value="risk" className="flex items-center gap-1">
+              <Shield className="w-4 h-4" />
+              Risk
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4 animate-fade-in">
+            {/* Chart + Signal Panel */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2 space-y-4">
-                <GannAnalysisPanel {...mockData.gann} />
+                <TradingChart />
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <IndicatorGrid 
-                    title="📡 John F. Ehlers' Digital Filters" 
-                    indicators={mockData.ehlers.indicators}
-                    compositeScore={mockData.ehlers.compositeScore}
-                  />
-                  
-                  <IndicatorGrid 
-                    title="🤖 Machine Learning Predictions" 
-                    indicators={mockData.ml.indicators}
-                    compositeScore={mockData.ml.compositeScore}
-                  />
+                {/* Market Watchlist */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {watchlist.map(item => (
+                    <LiveMarketCard 
+                      key={item.symbol}
+                      symbol={item.symbol}
+                      basePrice={item.basePrice}
+                      name={item.name}
+                    />
+                  ))}
                 </div>
               </div>
               
               <div className="space-y-4">
-                <SignalPanel {...mockData.signal} />
+                <SignalStrengthCard signal={signal} />
+                <GannLevelsCard levels={gannLevels} currentPrice={marketData.price} />
                 
-                <div className="bg-card border border-border rounded-lg p-6 hover-glow transition-all animate-fade-in">
-                  <h3 className="text-lg font-bold text-foreground mb-4 gradient-text">Backend Integration</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="p-3 bg-secondary/30 rounded hover-scale transition-all">
-                      <p className="text-muted-foreground mb-1">API Endpoint</p>
-                      <code className="text-xs font-mono text-primary break-all">
-                        http://localhost:8000/api/analysis
-                      </code>
+                {/* Backend Integration Info */}
+                <Card className="p-4 hover-glow">
+                  <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    API Integration
+                  </h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="p-2 bg-secondary/30 rounded">
+                      <p className="text-muted-foreground">REST API</p>
+                      <code className="font-mono text-primary">http://localhost:8000/api</code>
                     </div>
-                    
-                    <div className="p-3 bg-secondary/30 rounded hover-scale transition-all">
-                      <p className="text-muted-foreground mb-1">WebSocket</p>
-                      <code className="text-xs font-mono text-primary break-all">
-                        ws://localhost:8000/ws/live-feed
-                      </code>
+                    <div className="p-2 bg-secondary/30 rounded">
+                      <p className="text-muted-foreground">WebSocket</p>
+                      <code className="font-mono text-primary">ws://localhost:8000/ws</code>
                     </div>
-                    
-                    <div className="p-3 bg-status-info/10 border border-status-info/30 rounded hover-scale transition-all">
-                      <p className="text-xs text-muted-foreground">
-                        Connect this UI to your Python backend by implementing the API calls in the components.
-                        Current data shown is mock data for demonstration.
-                      </p>
-                    </div>
+                    <Badge variant="outline" className="w-full justify-center py-1">
+                      Demo Mode - Connect Backend
+                    </Badge>
                   </div>
-                </div>
+                </Card>
               </div>
             </div>
           </TabsContent>
           
-          <TabsContent value="calculations" className="space-y-4 animate-fade-in">
-            <CalculationDemo />
-          </TabsContent>
-          
-          <TabsContent value="advanced" className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <GannGeometryPanel {...mockData.gannGeometry} />
-              <TimeCyclesPanel {...mockData.timeCycles} />
-              <PatternRecognitionPanel {...mockData.patterns} />
-              <PlanetaryPanel {...mockData.planetary} />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="forecasting" className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ForecastPanel 
-                shortTermForecast={mockData.forecast.shortTerm}
-                athAtlEvents={mockData.forecast.athAtl.slice(0, 2)}
-              />
+          <TabsContent value="analysis" className="space-y-4 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <GannLevelsCard levels={gannLevels} currentPrice={marketData.price} />
+              <PlanetaryCard planetaryData={planetaryData} />
               
-              <div className="space-y-4">
-                <ForecastPanel 
-                  shortTermForecast={[]}
-                  athAtlEvents={mockData.forecast.athAtl.slice(2)}
-                />
-                <SupplyDemandPanel {...mockData.supplyDemand} />
-              </div>
+              {/* Time Cycles */}
+              <Card className="hover-glow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Time Cycles
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    { cycle: '7-Day', confidence: 0.88, daysRemaining: 3 },
+                    { cycle: '21-Day', confidence: 0.96, daysRemaining: 12 },
+                    { cycle: '90-Day (Quarter)', confidence: 0.92, daysRemaining: 45 },
+                    { cycle: '360-Day', confidence: 0.78, daysRemaining: 180 },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded bg-secondary/30">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{item.cycle}</p>
+                        <p className="text-xs text-muted-foreground">{item.daysRemaining} days to target</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={item.confidence * 100} className="w-16 h-2" />
+                        <Badge variant="outline">{(item.confidence * 100).toFixed(0)}%</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              
+              {/* Square of 9 Quick View */}
+              <Card className="hover-glow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Square of 9
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    {[
+                      { label: '90°', value: 103800, type: 'support' },
+                      { label: '180°', value: 104500, type: 'pivot' },
+                      { label: '270°', value: 105100, type: 'resistance' },
+                      { label: '360°', value: 105800, type: 'resistance' },
+                      { label: '450°', value: 106500, type: 'resistance' },
+                      { label: '540°', value: 107200, type: 'resistance' },
+                    ].map((level, idx) => (
+                      <div 
+                        key={idx}
+                        className={`p-2 rounded ${
+                          level.type === 'support' ? 'bg-success/10' :
+                          level.type === 'resistance' ? 'bg-destructive/10' :
+                          'bg-primary/10'
+                        }`}
+                      >
+                        <p className="text-xs text-muted-foreground">{level.label}</p>
+                        <p className={`text-sm font-mono font-bold ${
+                          level.type === 'support' ? 'text-success' :
+                          level.type === 'resistance' ? 'text-destructive' :
+                          'text-primary'
+                        }`}>
+                          {level.value.toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Pattern Recognition */}
+              <Card className="hover-glow lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold">Pattern Recognition</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      { name: 'Bullish Engulfing', type: 'Candlestick', confidence: 88, target: '104,700' },
+                      { name: 'Morning Star', type: 'Candlestick', confidence: 80, target: '104,325' },
+                      { name: 'Elliott Wave 3', type: 'Wave Structure', confidence: 85, target: '104,700' },
+                      { name: 'Harmonic AB=CD', type: 'Harmonic', confidence: 76, target: '104,800' },
+                    ].map((pattern, idx) => (
+                      <div key={idx} className="p-3 rounded bg-secondary/30 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{pattern.name}</p>
+                          <Badge variant="outline" className="text-xs mt-1">{pattern.type}</Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Target</p>
+                          <p className="text-sm font-mono font-bold text-success">{pattern.target}</p>
+                          <Progress value={pattern.confidence} className="w-16 h-1 mt-1" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="indicators" className="space-y-4 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <EhlersIndicatorsCard indicators={ehlersIndicators} compositeScore={ehlersScore} />
+              <MLPredictionsCard 
+                predictions={mlPredictions} 
+                compositeScore={mlScore} 
+                consensusPrice={consensusPrice} 
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="forecast" className="space-y-4 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Short Term Forecast */}
+              <Card className="hover-glow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    7-Day Forecast
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {[
+                      { date: '2025-01-05', price: 104652, prob: 62, note: '1x1 angle support' },
+                      { date: '2025-01-06', price: 104976, prob: 67, note: 'Square of 9 confluence' },
+                      { date: '2025-01-07', price: 104679, prob: 60, note: '2x1 angle test' },
+                      { date: '2025-01-08', price: 104998, prob: 65, note: 'Square of 90 harmonic' },
+                      { date: '2025-01-09', price: 105322, prob: 70, note: '1x2 angle confluence' },
+                      { date: '2025-01-10', price: 105105, prob: 75, note: 'ATH window' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded bg-secondary/30">
+                        <div>
+                          <p className="text-sm font-mono text-foreground">{item.date}</p>
+                          <p className="text-xs text-muted-foreground">{item.note}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold font-mono text-foreground">{item.price.toLocaleString()}</p>
+                          <div className="flex items-center gap-1">
+                            <Progress value={item.prob} className="w-12 h-1" />
+                            <span className="text-xs text-muted-foreground">{item.prob}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* ATH/ATL Projections */}
+              <Card className="hover-glow">
+                <CardHeader>
+                  <CardTitle>Time Projections — ATH/ATL</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 border border-success/30 rounded-lg bg-success/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-success" />
+                        <span className="font-semibold">Next ATH</span>
+                      </div>
+                      <Badge variant="outline" className="text-success border-success">86%</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">2025-01-12 10:00 UTC</p>
+                    <p className="text-2xl font-bold text-success mt-2">$105,105</p>
+                  </div>
+                  
+                  <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="w-5 h-5 text-destructive" />
+                        <span className="font-semibold">ATL Risk</span>
+                      </div>
+                      <Badge variant="outline" className="text-destructive border-destructive">71%</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">2025-01-16 13:40 UTC</p>
+                    <p className="text-2xl font-bold text-destructive mt-2">$104,304</p>
+                  </div>
+                  
+                  <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold">Long-Term ATH</span>
+                      <Badge variant="outline" className="text-primary border-primary">76%</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">2028-05-01 (Post-Halving)</p>
+                    <p className="text-2xl font-bold text-primary mt-2">$250,000</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
           
           <TabsContent value="risk" className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PositionSizePanel {...mockData.positionSize} />
-              <OptionsPanel {...mockData.options} />
+              {/* Position Sizing */}
+              <Card className="hover-glow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-primary" />
+                    Position Size Calculator
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Account Equity</p>
+                      <p className="text-lg font-bold text-foreground">$100,000</p>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Risk Per Trade</p>
+                      <p className="text-lg font-bold text-foreground">2%</p>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Risk Amount</p>
+                      <p className="text-lg font-bold text-destructive">$2,000</p>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Stop Distance</p>
+                      <p className="text-lg font-bold text-foreground">825 pts</p>
+                    </div>
+                    <div className="p-3 bg-secondary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Leverage</p>
+                      <p className="text-lg font-bold text-primary">5x</p>
+                    </div>
+                    <div className="p-3 bg-primary/20 border border-primary/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Lot Size</p>
+                      <p className="text-2xl font-bold text-primary">0.19</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Options Bias */}
+              <Card className="hover-glow">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    Options Market Sentiment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Bias</span>
+                    <Badge className="bg-success text-success-foreground">CALL (Bullish)</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-3 bg-secondary/30 rounded">
+                      <p className="text-xs text-muted-foreground">Delta</p>
+                      <p className="text-lg font-bold">0.32</p>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/30 rounded">
+                      <p className="text-xs text-muted-foreground">IVR</p>
+                      <p className="text-lg font-bold">45%</p>
+                    </div>
+                    <div className="text-center p-3 bg-secondary/30 rounded">
+                      <p className="text-xs text-muted-foreground">Expiry</p>
+                      <p className="text-lg font-bold">~14d</p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <p className="text-sm font-semibold mb-1">Recommendation</p>
+                    <p className="text-foreground">BTCUSD-Call Strike 105,000</p>
+                    <p className="text-xs text-muted-foreground">Mid: $145.30 • R:R 2.2</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
