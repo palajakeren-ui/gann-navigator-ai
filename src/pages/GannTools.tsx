@@ -1,13 +1,135 @@
-import { CalculationDemo } from "@/components/CalculationDemo";
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calculator, Calendar, Compass, Target, Grid, Sparkles, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Calculator, Calendar, Compass, Target, Grid3X3, Sparkles, RefreshCw,
+  TrendingUp, TrendingDown, Hexagon, Clock, Copy, Download
+} from "lucide-react";
+import { toast } from "sonner";
+
+// Calculation functions
+const calculateSquareOf9 = (centerPrice: number, numLevels: number = 8) => {
+  const root = Math.sqrt(centerPrice);
+  const levels: Array<{ degree: number; price: number; type: string; description: string }> = [];
+  const cardinalLevels: number[] = [];
+  const ordinalLevels: number[] = [];
+
+  // Cardinal angles (0°, 90°, 180°, 270°, 360°)
+  const cardinalAngles = [0, 90, 180, 270, 360, 450, 540, 630, 720];
+  const ordinalAngles = [45, 135, 225, 315, 405, 495, 585, 675];
+
+  cardinalAngles.forEach(degree => {
+    const angleIncrement = degree / 360;
+    const newRoot = root + angleIncrement;
+    const price = Math.pow(newRoot, 2);
+    cardinalLevels.push(price);
+    levels.push({
+      degree,
+      price,
+      type: 'cardinal',
+      description: `${degree}° Cardinal - Major S/R`
+    });
+  });
+
+  ordinalAngles.forEach(degree => {
+    const angleIncrement = degree / 360;
+    const newRoot = root + angleIncrement;
+    const price = Math.pow(newRoot, 2);
+    ordinalLevels.push(price);
+    levels.push({
+      degree,
+      price,
+      type: 'ordinal',
+      description: `${degree}° Ordinal - Secondary S/R`
+    });
+  });
+
+  for (let i = 1; i <= numLevels; i++) {
+    const supportRoot = root - (i * 0.25);
+    if (supportRoot > 0) {
+      levels.push({
+        degree: -i * 90,
+        price: Math.pow(supportRoot, 2),
+        type: 'support',
+        description: `Support Level ${i} (-${i * 90}°)`
+      });
+    }
+    const resistanceRoot = root + (i * 0.25);
+    levels.push({
+      degree: i * 90,
+      price: Math.pow(resistanceRoot, 2),
+      type: 'resistance',
+      description: `Resistance Level ${i} (+${i * 90}°)`
+    });
+  }
+
+  levels.sort((a, b) => a.price - b.price);
+  return { inputPrice: centerPrice, root, levels, cardinalLevels: cardinalLevels.sort((a, b) => a - b), ordinalLevels: ordinalLevels.sort((a, b) => a - b) };
+};
+
+const calculateHexagonLevels = (centerPrice: number) => {
+  const root = Math.sqrt(centerPrice);
+  const levels: Array<{ degree: number; price: number; type: string; harmonic: string }> = [];
+  const hexAngles = [0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720];
+  
+  hexAngles.forEach(degree => {
+    const angleIncrement = degree / 360;
+    const newRoot = root + angleIncrement;
+    const price = Math.pow(newRoot, 2);
+    
+    let harmonic = '';
+    if (degree % 180 === 0) harmonic = 'Full Pivot';
+    else if (degree % 120 === 0) harmonic = 'Resistance Harmonic';
+    else if (degree % 60 === 0) harmonic = 'Support Harmonic';
+    
+    levels.push({ degree, price, type: degree % 180 === 0 ? 'major' : degree % 60 === 0 ? 'minor' : 'tertiary', harmonic });
+  });
+  return levels;
+};
+
+const calculateSquareOf90 = (centerPrice: number) => {
+  const root = Math.sqrt(centerPrice);
+  const levels: Array<{ degree: number; price: number; type: string; description: string }> = [];
+  
+  for (let i = -4; i <= 4; i++) {
+    if (i === 0) {
+      levels.push({ degree: 0, price: centerPrice, type: 'cardinal', description: 'Center Price' });
+      continue;
+    }
+    const newRoot = root + (i * 90 / 360);
+    if (newRoot > 0) {
+      levels.push({
+        degree: i * 90,
+        price: Math.pow(newRoot, 2),
+        type: i > 0 ? 'resistance' : 'support',
+        description: `${Math.abs(i * 90)}° ${i > 0 ? 'Resistance' : 'Support'}`
+      });
+    }
+  }
+  return levels.sort((a, b) => a.price - b.price);
+};
+
+const calculateTimeCycles = (startDate: Date) => {
+  const cycles = [
+    { cycle: '7-Day', days: 7, significance: 'medium' as const },
+    { cycle: '21-Day', days: 21, significance: 'high' as const },
+    { cycle: '30-Day', days: 30, significance: 'medium' as const },
+    { cycle: '45-Day', days: 45, significance: 'medium' as const },
+    { cycle: '52-Day (Weekly Cycle)', days: 52, significance: 'high' as const },
+    { cycle: '90-Day (Quarter)', days: 90, significance: 'high' as const },
+    { cycle: '144-Day (Fibonacci)', days: 144, significance: 'high' as const },
+    { cycle: '180-Day (Half Year)', days: 180, significance: 'medium' as const },
+    { cycle: '360-Day (Full Year)', days: 360, significance: 'high' as const },
+  ];
+  return cycles.map(c => ({ ...c, targetDate: new Date(startDate.getTime() + c.days * 24 * 60 * 60 * 1000) }));
+};
 
 const gannAngles = [
   { ratio: "8x1", angle: "82.5°", desc: "Fastest uptrend", slope: 8 },
@@ -25,289 +147,479 @@ const gannNumbers = [7, 30, 45, 52, 90, 144, 180, 270, 360];
 const fibNumbers = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233];
 
 const GannTools = () => {
-  const [activeTab, setActiveTab] = useState("calculator");
-  const [basePrice, setBasePrice] = useState("104525");
-  const [squareOf9Results, setSquareOf9Results] = useState<{ angle: number; price: number; type: string }[]>([]);
-  const [hexResults, setHexResults] = useState<{ angle: number; price: number }[]>([]);
+  const [inputPrice, setInputPrice] = useState(104525);
+  const [calculatedLevels, setCalculatedLevels] = useState<ReturnType<typeof calculateSquareOf9> | null>(null);
+  const [hexagonLevels, setHexagonLevels] = useState<ReturnType<typeof calculateHexagonLevels> | null>(null);
+  const [square90Levels, setSquare90Levels] = useState<ReturnType<typeof calculateSquareOf90> | null>(null);
+  const [timeCycles, setTimeCycles] = useState<ReturnType<typeof calculateTimeCycles> | null>(null);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const calculateSquareOf9 = () => {
-    const base = parseFloat(basePrice);
-    if (isNaN(base)) return;
-    
-    const results: { angle: number; price: number; type: string }[] = [];
-    for (let i = 1; i <= 8; i++) {
-      const angle = i * 45;
-      const sqrt = Math.sqrt(base);
-      const levelUp = Math.pow(sqrt + (angle / 180), 2);
-      const levelDown = Math.pow(sqrt - (angle / 180), 2);
-      results.push({ angle, price: Math.round(levelUp * 100) / 100, type: "Resistance" });
-      results.push({ angle: -angle, price: Math.round(levelDown * 100) / 100, type: "Support" });
-    }
-    setSquareOf9Results(results.sort((a, b) => b.price - a.price));
+  const handleCalculateAll = () => {
+    setCalculatedLevels(calculateSquareOf9(inputPrice, 8));
+    setHexagonLevels(calculateHexagonLevels(inputPrice));
+    setSquare90Levels(calculateSquareOf90(inputPrice));
+    setTimeCycles(calculateTimeCycles(new Date(startDate)));
+    toast.success("All Gann calculations completed!");
   };
 
-  const calculateHexagon = () => {
-    const base = parseFloat(basePrice);
-    if (isNaN(base)) return;
-    
-    const results: { angle: number; price: number }[] = [];
-    for (let i = 1; i <= 6; i++) {
-      const angle = i * 60;
-      const price = base * (1 + (angle / 360) * 0.1);
-      results.push({ angle, price: Math.round(price * 100) / 100 });
-    }
-    setHexResults(results);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard!");
+  };
+
+  const exportResults = () => {
+    const data = { inputPrice, square9: calculatedLevels, hexagon: hexagonLevels, square90: square90Levels, timeCycles };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gann-calculations-${inputPrice}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Results exported!");
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold gradient-text flex items-center gap-3">
-            <Target className="w-8 h-8 text-accent" />
-            Gann Tools
+            <Target className="w-8 h-8 text-primary" />
+            Gann Calculation Tools
           </h1>
-          <p className="text-muted-foreground">Comprehensive Gann calculation toolkit</p>
+          <p className="text-muted-foreground">Advanced Gann geometry calculations for price analysis</p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <RefreshCw className="w-4 h-4" />
-          Reset
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="inputPrice" className="text-muted-foreground whitespace-nowrap">Price:</Label>
+            <Input
+              id="inputPrice"
+              type="number"
+              value={inputPrice}
+              onChange={(e) => setInputPrice(parseFloat(e.target.value) || 0)}
+              className="w-32"
+            />
+          </div>
+          <Button onClick={handleCalculateAll}>
+            <Calculator className="w-4 h-4 mr-2" />
+            Calculate All
+          </Button>
+          <Button variant="outline" onClick={exportResults}>
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 glass-card text-center animate-scale-in">
-          <Calculator className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h3 className="font-bold text-foreground mb-2">Square of 9</h3>
-          <p className="text-sm text-muted-foreground">Calculate Gann Square levels and angles</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 hover-glow">
+          <div className="flex items-center gap-3">
+            <Grid3X3 className="w-10 h-10 text-primary" />
+            <div>
+              <p className="text-sm text-muted-foreground">Square Root</p>
+              <p className="text-xl font-bold">{Math.sqrt(inputPrice).toFixed(4)}</p>
+            </div>
+          </div>
         </Card>
-
-        <Card className="p-6 glass-card text-center animate-scale-in" style={{ animationDelay: '100ms' }}>
-          <Calendar className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h3 className="font-bold text-foreground mb-2">Time Cycles</h3>
-          <p className="text-sm text-muted-foreground">Natural time periods and turning points</p>
+        <Card className="p-4 hover-glow">
+          <div className="flex items-center gap-3">
+            <Target className="w-10 h-10 text-success" />
+            <div>
+              <p className="text-sm text-muted-foreground">90° Support</p>
+              <p className="text-xl font-bold text-success">
+                {Math.pow(Math.sqrt(inputPrice) - 0.25, 2).toFixed(0)}
+              </p>
+            </div>
+          </div>
         </Card>
-
-        <Card className="p-6 glass-card text-center animate-scale-in" style={{ animationDelay: '200ms' }}>
-          <Compass className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h3 className="font-bold text-foreground mb-2">Gann Angles</h3>
-          <p className="text-sm text-muted-foreground">1x1, 1x2, 2x1 angle calculations</p>
+        <Card className="p-4 hover-glow">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="w-10 h-10 text-destructive" />
+            <div>
+              <p className="text-sm text-muted-foreground">90° Resistance</p>
+              <p className="text-xl font-bold text-destructive">
+                {Math.pow(Math.sqrt(inputPrice) + 0.25, 2).toFixed(0)}
+              </p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4 hover-glow">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-10 h-10 text-accent" />
+            <div>
+              <p className="text-sm text-muted-foreground">360° Level</p>
+              <p className="text-xl font-bold text-accent">
+                {Math.pow(Math.sqrt(inputPrice) + 1, 2).toFixed(0)}
+              </p>
+            </div>
+          </div>
         </Card>
       </div>
 
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="calculator">Square of 9</TabsTrigger>
-          <TabsTrigger value="angles">Gann Angles</TabsTrigger>
-          <TabsTrigger value="cycles">Time Cycles</TabsTrigger>
-          <TabsTrigger value="demo">Live Demo</TabsTrigger>
+      <Tabs defaultValue="square9" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="square9" className="flex items-center gap-1">
+            <Grid3X3 className="w-4 h-4" />
+            Square of 9
+          </TabsTrigger>
+          <TabsTrigger value="square90" className="flex items-center gap-1">
+            <Target className="w-4 h-4" />
+            Square of 90
+          </TabsTrigger>
+          <TabsTrigger value="hexagon" className="flex items-center gap-1">
+            <Hexagon className="w-4 h-4" />
+            Hexagon
+          </TabsTrigger>
+          <TabsTrigger value="angles" className="flex items-center gap-1">
+            <Compass className="w-4 h-4" />
+            Fan Angles
+          </TabsTrigger>
+          <TabsTrigger value="cycles" className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            Time Cycles
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calculator" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="p-6 glass-card">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-primary" />
-                Square of 9 Calculator
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Base Price</Label>
-                  <Input
-                    type="number"
-                    value={basePrice}
-                    onChange={(e) => setBasePrice(e.target.value)}
-                    placeholder="Enter price"
-                  />
-                </div>
-                <Button onClick={calculateSquareOf9} className="w-full">
-                  Calculate Levels
-                </Button>
-                
-                {squareOf9Results.length > 0 && (
-                  <div className="mt-4 space-y-2 max-h-[400px] overflow-y-auto">
-                    <Label>Results</Label>
-                    {squareOf9Results.map((result, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`p-3 rounded-lg ${result.type === "Resistance" ? "bg-destructive/10" : "bg-success/10"}`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <Badge variant="outline" className={result.type === "Resistance" ? "text-destructive border-destructive" : "text-success border-success"}>
-                              {result.type}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground ml-2">{result.angle}°</span>
-                          </div>
-                          <span className="text-lg font-mono font-bold text-foreground">${result.price.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-6 glass-card">
-              <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Hexagon Calculator
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Base Price</Label>
-                  <Input
-                    type="number"
-                    value={basePrice}
-                    onChange={(e) => setBasePrice(e.target.value)}
-                    placeholder="Enter price"
-                  />
-                </div>
-                <Button onClick={calculateHexagon} className="w-full" variant="outline">
-                  Calculate Hexagon
-                </Button>
-                
-                {hexResults.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <Label>Hexagon Levels (60° intervals)</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {hexResults.map((result, idx) => (
-                        <div key={idx} className="p-3 rounded-lg bg-secondary/50">
-                          <p className="text-xs text-muted-foreground">{result.angle}°</p>
-                          <p className="text-lg font-mono font-bold text-foreground">${result.price.toLocaleString()}</p>
-                        </div>
-                      ))}
+        <TabsContent value="square9" className="space-y-4 mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="hover-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Grid3X3 className="w-5 h-5 text-primary" />
+                  Square of 9 Calculator
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-secondary/30 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Input Price</p>
+                      <p className="text-2xl font-bold text-foreground">${inputPrice.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Square Root</p>
+                      <p className="text-2xl font-bold text-primary">{Math.sqrt(inputPrice).toFixed(4)}</p>
                     </div>
                   </div>
+                </div>
+
+                {calculatedLevels && (
+                  <>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-foreground">Cardinal Levels</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {calculatedLevels.cardinalLevels.slice(0, 6).map((level, idx) => (
+                          <div 
+                            key={idx}
+                            className="p-2 bg-primary/10 rounded text-center cursor-pointer hover:bg-primary/20"
+                            onClick={() => copyToClipboard(level.toFixed(2))}
+                          >
+                            <p className="text-xs text-muted-foreground">{idx * 90}°</p>
+                            <p className="text-sm font-mono font-bold text-primary">
+                              {level.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-foreground">Ordinal Levels</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {calculatedLevels.ordinalLevels.slice(0, 4).map((level, idx) => (
+                          <div 
+                            key={idx}
+                            className="p-2 bg-accent/10 rounded text-center cursor-pointer hover:bg-accent/20"
+                            onClick={() => copyToClipboard(level.toFixed(2))}
+                          >
+                            <p className="text-xs text-muted-foreground">{45 + idx * 90}°</p>
+                            <p className="text-sm font-mono font-bold text-accent">
+                              {level.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
-              </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover-glow">
+              <CardHeader>
+                <CardTitle>All Calculated Levels</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {calculatedLevels ? (
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Degree</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {calculatedLevels.levels.map((level, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-mono">{level.degree}°</TableCell>
+                            <TableCell className={`font-mono font-bold ${
+                              level.type === 'support' ? 'text-success' :
+                              level.type === 'resistance' ? 'text-destructive' :
+                              'text-primary'
+                            }`}>
+                              {level.price.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                level.type === 'support' ? 'default' :
+                                level.type === 'resistance' ? 'destructive' :
+                                'secondary'
+                              } className="text-xs">
+                                {level.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm" onClick={() => copyToClipboard(level.price.toFixed(2))}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">Click "Calculate All" to generate levels</p>
+                )}
+              </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="angles" className="space-y-6">
-          <Card className="p-6 glass-card">
-            <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-              <Grid className="w-5 h-5 text-primary" />
-              Gann Angle Reference
-            </h3>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ratio</TableHead>
-                  <TableHead>Angle</TableHead>
-                  <TableHead>Slope</TableHead>
-                  <TableHead>Description</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {gannAngles.map((angle) => (
-                  <TableRow key={angle.ratio}>
-                    <TableCell>
-                      <Badge variant="outline" className="font-mono">{angle.ratio}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono font-semibold">{angle.angle}</TableCell>
-                    <TableCell className="font-mono">{angle.slope}</TableCell>
-                    <TableCell className="text-muted-foreground">{angle.desc}</TableCell>
+        <TabsContent value="square90" className="space-y-4 mt-6">
+          <Card className="hover-glow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Square of 90 (Quarter Cycle)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {square90Levels ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {square90Levels.map((level, idx) => (
+                    <div 
+                      key={idx}
+                      className={`p-4 rounded-lg cursor-pointer transition-all hover:scale-105 ${
+                        level.type === 'support' ? 'bg-success/10 border border-success/30' :
+                        level.type === 'resistance' ? 'bg-destructive/10 border border-destructive/30' :
+                        'bg-primary/10 border border-primary/30'
+                      }`}
+                      onClick={() => copyToClipboard(level.price.toFixed(2))}
+                    >
+                      <p className="text-xs text-muted-foreground">{level.degree}°</p>
+                      <p className={`text-xl font-bold font-mono ${
+                        level.type === 'support' ? 'text-success' :
+                        level.type === 'resistance' ? 'text-destructive' :
+                        'text-primary'
+                      }`}>
+                        {level.price.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{level.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Click "Calculate All" to generate levels</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="hexagon" className="space-y-4 mt-6">
+          <Card className="hover-glow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Hexagon className="w-5 h-5 text-primary" />
+                Hexagon Calculator (60° Intervals)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hexagonLevels ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {hexagonLevels.map((level, idx) => (
+                    <div 
+                      key={idx}
+                      className={`p-3 rounded-lg cursor-pointer transition-all hover:scale-105 ${
+                        level.type === 'major' ? 'bg-primary/20 border border-primary/40' :
+                        level.type === 'minor' ? 'bg-accent/10 border border-accent/30' :
+                        'bg-secondary/30'
+                      }`}
+                      onClick={() => copyToClipboard(level.price.toFixed(2))}
+                    >
+                      <p className="text-xs text-muted-foreground">{level.degree}°</p>
+                      <p className="text-lg font-bold font-mono text-foreground">
+                        {level.price.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{level.harmonic}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Click "Calculate All" to generate levels</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="angles" className="space-y-4 mt-6">
+          <Card className="hover-glow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Compass className="w-5 h-5 text-primary" />
+                Gann Fan Angle Reference
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ratio</TableHead>
+                    <TableHead>Angle</TableHead>
+                    <TableHead>Slope</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Type</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-
-          <Card className="p-6 glass-card">
-            <h3 className="text-xl font-bold text-foreground mb-4">Angle Calculator</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Start Price</Label>
-                <Input type="number" placeholder="100" />
-              </div>
-              <div className="space-y-2">
-                <Label>End Price</Label>
-                <Input type="number" placeholder="120" />
-              </div>
-              <div className="space-y-2">
-                <Label>Time (bars)</Label>
-                <Input type="number" placeholder="20" />
-              </div>
-            </div>
-            <Button className="mt-4 w-full">Calculate Angle</Button>
+                </TableHeader>
+                <TableBody>
+                  {gannAngles.map((angle, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-bold font-mono">{angle.ratio}</TableCell>
+                      <TableCell className="font-mono">{angle.angle}</TableCell>
+                      <TableCell className="font-mono">{angle.slope}</TableCell>
+                      <TableCell className="text-muted-foreground">{angle.desc}</TableCell>
+                      <TableCell>
+                        <Badge variant={angle.slope >= 1 ? 'destructive' : 'default'}>
+                          {angle.slope >= 1 ? 'Resistance' : 'Support'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="cycles" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 glass-card">
-              <h3 className="text-lg font-bold text-foreground mb-4">Key Gann Numbers</h3>
-              <div className="space-y-2">
-                {gannNumbers.map((num) => (
-                  <div key={num} className="flex justify-between p-2 rounded bg-secondary/50">
-                    <span className="text-muted-foreground">{num} days</span>
-                    <Badge variant="outline">{num}°</Badge>
-                  </div>
-                ))}
+        <TabsContent value="cycles" className="space-y-4 mt-6">
+          <Card className="hover-glow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Time Cycle Projections
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Label>Start Date:</Label>
+                  <Input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-40"
+                  />
+                </div>
               </div>
+            </CardHeader>
+            <CardContent>
+              {timeCycles ? (
+                <div className="space-y-3">
+                  {timeCycles.map((cycle, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">{cycle.cycle}</p>
+                        <p className="text-xs text-muted-foreground">{cycle.days} days from start</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm font-mono text-foreground">
+                          {cycle.targetDate.toLocaleDateString()}
+                        </p>
+                        <Badge variant={
+                          cycle.significance === 'high' ? 'default' :
+                          cycle.significance === 'medium' ? 'secondary' :
+                          'outline'
+                        }>
+                          {cycle.significance}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Click "Calculate All" to generate cycles</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="hover-glow">
+              <CardHeader>
+                <CardTitle className="text-lg">Key Gann Numbers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {gannNumbers.map((num) => (
+                    <div key={num} className="flex justify-between p-2 rounded bg-secondary/50">
+                      <span className="text-muted-foreground">{num} days</span>
+                      <Badge variant="outline">{num}°</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
 
-            <Card className="p-6 glass-card">
-              <h3 className="text-lg font-bold text-foreground mb-4">Natural Cycles</h3>
-              <div className="space-y-2">
-                {[
-                  { name: "Weekly", days: 7 },
-                  { name: "Monthly", days: 30 },
-                  { name: "Quarterly", days: 90 },
-                  { name: "Semi-Annual", days: 180 },
-                  { name: "Annual", days: 365 },
-                  { name: "2 Year", days: 730 },
-                ].map((cycle) => (
-                  <div key={cycle.name} className="flex justify-between p-2 rounded bg-secondary/50">
-                    <span className="text-muted-foreground">{cycle.name}</span>
-                    <span className="font-mono text-foreground">{cycle.days}d</span>
-                  </div>
-                ))}
-              </div>
+            <Card className="hover-glow">
+              <CardHeader>
+                <CardTitle className="text-lg">Natural Cycles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[
+                    { name: "Weekly", days: 7 },
+                    { name: "Monthly", days: 30 },
+                    { name: "Quarterly", days: 90 },
+                    { name: "Semi-Annual", days: 180 },
+                    { name: "Annual", days: 365 },
+                  ].map((cycle) => (
+                    <div key={cycle.name} className="flex justify-between p-2 rounded bg-secondary/50">
+                      <span className="text-muted-foreground">{cycle.name}</span>
+                      <span className="font-mono text-foreground">{cycle.days}d</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
 
-            <Card className="p-6 glass-card">
-              <h3 className="text-lg font-bold text-foreground mb-4">Fibonacci Time</h3>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {fibNumbers.map((fib) => (
-                  <div key={fib} className="flex justify-between p-2 rounded bg-secondary/50">
-                    <span className="text-muted-foreground">Fib {fib}</span>
-                    <span className="font-mono text-foreground">{fib}d</span>
-                  </div>
-                ))}
-              </div>
+            <Card className="hover-glow">
+              <CardHeader>
+                <CardTitle className="text-lg">Fibonacci Time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {fibNumbers.map((fib) => (
+                    <div key={fib} className="flex justify-between p-2 rounded bg-secondary/50">
+                      <span className="text-muted-foreground">Fib {fib}</span>
+                      <span className="font-mono text-foreground">{fib}d</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
           </div>
-
-          <Card className="p-6 glass-card">
-            <h3 className="text-xl font-bold text-foreground mb-4">Time Cycle Calculator</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input type="date" />
-              </div>
-              <div className="space-y-2">
-                <Label>Cycle Length (days)</Label>
-                <Input type="number" placeholder="90" />
-              </div>
-              <div className="space-y-2">
-                <Label>Number of Cycles</Label>
-                <Input type="number" placeholder="4" />
-              </div>
-              <div className="flex items-end">
-                <Button className="w-full">Calculate Turn Dates</Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="demo" className="space-y-6">
-          <CalculationDemo />
         </TabsContent>
       </Tabs>
     </div>
