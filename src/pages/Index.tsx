@@ -8,6 +8,10 @@ import { GannLevelsCard } from "@/components/dashboard/GannLevelsCard";
 import { PlanetaryCard } from "@/components/dashboard/PlanetaryCard";
 import { EhlersIndicatorsCard } from "@/components/dashboard/EhlersIndicatorsCard";
 import { MLPredictionsCard } from "@/components/dashboard/MLPredictionsCard";
+import { MarketHeatMap } from "@/components/dashboard/MarketHeatMap";
+import { QuickTradeCard } from "@/components/dashboard/QuickTradeCard";
+import { AlertsCard } from "@/components/dashboard/AlertsCard";
+import { PerformanceCard } from "@/components/dashboard/PerformanceCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +29,7 @@ import {
 import { 
   TrendingUp, TrendingDown, Activity, Target, Clock, 
   RefreshCw, Wifi, Settings, BarChart3, Calendar,
-  Sparkles, Moon, Brain, Zap, Shield
+  Sparkles, Moon, Brain, Zap, Shield, Layout, Maximize2
 } from "lucide-react";
 
 const timeframes = [
@@ -45,12 +49,15 @@ const watchlist = [
   { symbol: "ETHUSD", name: "Ethereum", basePrice: 3890 },
   { symbol: "XAUUSD", name: "Gold", basePrice: 2045 },
   { symbol: "EURUSD", name: "Euro/USD", basePrice: 1.0875 },
+  { symbol: "SOLUSD", name: "Solana", basePrice: 156 },
+  { symbol: "GBPUSD", name: "GBP/USD", basePrice: 1.2654 },
 ];
 
 const Index = () => {
   const [activeTimeframe, setActiveTimeframe] = useState("H4");
   const [activeSymbol, setActiveSymbol] = useState("BTCUSD");
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [layoutMode, setLayoutMode] = useState<"compact" | "full">("full");
 
   // Real-time data hooks
   const { data: marketData, isConnected } = useRealTimeData(activeSymbol, 104525, 2000);
@@ -120,19 +127,27 @@ const Index = () => {
               </SelectContent>
             </Select>
             
-            <div className="flex gap-1 bg-secondary/30 p-1 rounded-lg">
+            <div className="flex gap-1 bg-secondary/30 p-1 rounded-lg overflow-x-auto max-w-[400px]">
               {timeframes.map(tf => (
                 <Button
                   key={tf.value}
                   variant={activeTimeframe === tf.value ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setActiveTimeframe(tf.value)}
-                  className="h-7 px-2 text-xs"
+                  className="h-7 px-2 text-xs shrink-0"
                 >
                   {tf.label}
                 </Button>
               ))}
             </div>
+            
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setLayoutMode(prev => prev === "compact" ? "full" : "compact")}
+            >
+              {layoutMode === "compact" ? <Maximize2 className="w-4 h-4" /> : <Layout className="w-4 h-4" />}
+            </Button>
             
             <Button variant="outline" size="icon">
               <RefreshCw className="w-4 h-4" />
@@ -141,7 +156,7 @@ const Index = () => {
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           <Card className="p-3 hover-glow">
             <div className="flex items-center justify-between">
               <div>
@@ -184,6 +199,16 @@ const Index = () => {
           <Card className="p-3 hover-glow">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-xs text-muted-foreground">Strength</p>
+                <p className="text-lg font-bold text-accent">{((signal?.strength || 0) * 100).toFixed(0)}%</p>
+              </div>
+              <Zap className="w-5 h-5 text-accent" />
+            </div>
+          </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-xs text-muted-foreground">Ehlers</p>
                 <p className="text-lg font-bold text-success">{(ehlersScore * 100).toFixed(0)}%</p>
               </div>
@@ -212,18 +237,28 @@ const Index = () => {
               <Moon className="w-5 h-5 text-primary" />
             </div>
           </Card>
+          
+          <Card className="p-3 hover-glow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Risk</p>
+                <p className="text-lg font-bold text-success">LOW</p>
+              </div>
+              <Shield className="w-5 h-5 text-success" />
+            </div>
+          </Card>
         </div>
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid mb-4 hover-glow transition-all">
             <TabsTrigger value="overview" className="flex items-center gap-1">
               <BarChart3 className="w-4 h-4" />
               Overview
             </TabsTrigger>
             <TabsTrigger value="analysis" className="flex items-center gap-1">
               <Sparkles className="w-4 h-4" />
-              Gann Analysis
+              Analysis
             </TabsTrigger>
             <TabsTrigger value="indicators" className="flex items-center gap-1">
               <Activity className="w-4 h-4" />
@@ -237,16 +272,20 @@ const Index = () => {
               <Shield className="w-4 h-4" />
               Risk
             </TabsTrigger>
+            <TabsTrigger value="trade" className="flex items-center gap-1">
+              <Zap className="w-4 h-4" />
+              Trade
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4 animate-fade-in">
             {/* Chart + Signal Panel */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              <div className="xl:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+              <div className="xl:col-span-3 space-y-4">
                 <TradingChart />
                 
                 {/* Market Watchlist */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
                   {watchlist.map(item => (
                     <LiveMarketCard 
                       key={item.symbol}
@@ -260,28 +299,8 @@ const Index = () => {
               
               <div className="space-y-4">
                 <SignalStrengthCard signal={signal} />
-                <GannLevelsCard levels={gannLevels} currentPrice={marketData.price} />
-                
-                {/* Backend Integration Info */}
-                <Card className="p-4 hover-glow">
-                  <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    API Integration
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    <div className="p-2 bg-secondary/30 rounded">
-                      <p className="text-muted-foreground">REST API</p>
-                      <code className="font-mono text-primary">http://localhost:8000/api</code>
-                    </div>
-                    <div className="p-2 bg-secondary/30 rounded">
-                      <p className="text-muted-foreground">WebSocket</p>
-                      <code className="font-mono text-primary">ws://localhost:8000/ws</code>
-                    </div>
-                    <Badge variant="outline" className="w-full justify-center py-1">
-                      Demo Mode - Connect Backend
-                    </Badge>
-                  </div>
-                </Card>
+                <AlertsCard />
+                <PerformanceCard />
               </div>
             </div>
           </TabsContent>
@@ -395,168 +414,155 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <EhlersIndicatorsCard indicators={ehlersIndicators} compositeScore={ehlersScore} />
               <MLPredictionsCard 
-                predictions={mlPredictions} 
-                compositeScore={mlScore} 
-                consensusPrice={consensusPrice} 
+                predictions={mlPredictions}
+                compositeScore={mlScore}
+                consensusPrice={consensusPrice}
               />
             </div>
+            
+            <MarketHeatMap />
           </TabsContent>
           
           <TabsContent value="forecast" className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Short Term Forecast */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {/* 24h Forecast */}
               <Card className="hover-glow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-primary" />
-                    7-Day Forecast
+                    24h Forecast
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {[
-                      { date: '2025-01-05', price: 104652, prob: 62, note: '1x1 angle support' },
-                      { date: '2025-01-06', price: 104976, prob: 67, note: 'Square of 9 confluence' },
-                      { date: '2025-01-07', price: 104679, prob: 60, note: '2x1 angle test' },
-                      { date: '2025-01-08', price: 104998, prob: 65, note: 'Square of 90 harmonic' },
-                      { date: '2025-01-09', price: 105322, prob: 70, note: '1x2 angle confluence' },
-                      { date: '2025-01-10', price: 105105, prob: 75, note: 'ATH window' },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 rounded bg-secondary/30">
-                        <div>
-                          <p className="text-sm font-mono text-foreground">{item.date}</p>
-                          <p className="text-xs text-muted-foreground">{item.note}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold font-mono text-foreground">{item.price.toLocaleString()}</p>
-                          <div className="flex items-center gap-1">
-                            <Progress value={item.prob} className="w-12 h-1" />
-                            <span className="text-xs text-muted-foreground">{item.prob}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <CardContent className="space-y-3">
+                  <div className="text-center p-4 bg-success/10 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Target Price</p>
+                    <p className="text-3xl font-bold text-success">${consensusPrice.toLocaleString()}</p>
+                    <Badge variant="outline" className="mt-2 bg-success/10 text-success border-success/20">
+                      +{((consensusPrice - marketData.price) / marketData.price * 100).toFixed(2)}%
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded bg-secondary/50 text-center">
+                      <p className="text-xs text-muted-foreground">Support</p>
+                      <p className="font-mono font-bold text-success">${(marketData.price * 0.98).toFixed(0)}</p>
+                    </div>
+                    <div className="p-2 rounded bg-secondary/50 text-center">
+                      <p className="text-xs text-muted-foreground">Resistance</p>
+                      <p className="font-mono font-bold text-destructive">${(marketData.price * 1.02).toFixed(0)}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
               
-              {/* ATH/ATL Projections */}
+              {/* Weekly Forecast */}
               <Card className="hover-glow">
-                <CardHeader>
-                  <CardTitle>Time Projections — ATH/ATL</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold">Weekly Forecast</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 border border-success/30 rounded-lg bg-success/5">
-                    <div className="flex items-center justify-between mb-2">
+                <CardContent className="space-y-2">
+                  {[
+                    { day: 'Mon', price: 104800, direction: 'up' },
+                    { day: 'Tue', price: 105200, direction: 'up' },
+                    { day: 'Wed', price: 104950, direction: 'down' },
+                    { day: 'Thu', price: 105500, direction: 'up' },
+                    { day: 'Fri', price: 105300, direction: 'down' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded bg-secondary/30">
+                      <span className="text-sm font-medium">{item.day}</span>
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-success" />
-                        <span className="font-semibold">Next ATH</span>
+                        <span className="font-mono text-sm">${item.price.toLocaleString()}</span>
+                        {item.direction === 'up' ? (
+                          <TrendingUp className="w-4 h-4 text-success" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4 text-destructive" />
+                        )}
                       </div>
-                      <Badge variant="outline" className="text-success border-success">86%</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">2025-01-12 10:00 UTC</p>
-                    <p className="text-2xl font-bold text-success mt-2">$105,105</p>
-                  </div>
-                  
-                  <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <TrendingDown className="w-5 h-5 text-destructive" />
-                        <span className="font-semibold">ATL Risk</span>
+                  ))}
+                </CardContent>
+              </Card>
+              
+              {/* Key Events */}
+              <Card className="hover-glow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-bold">Key Events</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { event: 'FOMC Meeting', date: 'Jan 8', impact: 'High' },
+                    { event: 'CPI Release', date: 'Jan 12', impact: 'High' },
+                    { event: 'Mercury Retrograde End', date: 'Jan 15', impact: 'Medium' },
+                    { event: 'Full Moon', date: 'Jan 18', impact: 'Low' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded bg-secondary/30">
+                      <div>
+                        <p className="text-sm font-medium">{item.event}</p>
+                        <p className="text-xs text-muted-foreground">{item.date}</p>
                       </div>
-                      <Badge variant="outline" className="text-destructive border-destructive">71%</Badge>
+                      <Badge variant={
+                        item.impact === 'High' ? 'destructive' :
+                        item.impact === 'Medium' ? 'default' :
+                        'secondary'
+                      }>
+                        {item.impact}
+                      </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">2025-01-16 13:40 UTC</p>
-                    <p className="text-2xl font-bold text-destructive mt-2">$104,304</p>
-                  </div>
-                  
-                  <div className="p-4 border border-primary/30 rounded-lg bg-primary/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold">Long-Term ATH</span>
-                      <Badge variant="outline" className="text-primary border-primary">76%</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">2028-05-01 (Post-Halving)</p>
-                    <p className="text-2xl font-bold text-primary mt-2">$250,000</p>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
           
           <TabsContent value="risk" className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Position Sizing */}
-              <Card className="hover-glow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-primary" />
-                    Position Size Calculator
-                  </CardTitle>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Risk Status */}
+              <Card className="hover-glow lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-success" />
+                      Risk Status
+                    </CardTitle>
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-lg px-4 py-1">
+                      LOW RISK
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Account Equity</p>
-                      <p className="text-lg font-bold text-foreground">$100,000</p>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
+                      <p className="text-xl font-bold text-success">67.8%</p>
                     </div>
-                    <div className="p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Risk Per Trade</p>
-                      <p className="text-lg font-bold text-foreground">2%</p>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground mb-1">Avg R:R</p>
+                      <p className="text-xl font-bold text-foreground">2.4</p>
                     </div>
-                    <div className="p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Risk Amount</p>
-                      <p className="text-lg font-bold text-destructive">$2,000</p>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground mb-1">Sharpe Ratio</p>
+                      <p className="text-xl font-bold text-success">2.34</p>
                     </div>
-                    <div className="p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Stop Distance</p>
-                      <p className="text-lg font-bold text-foreground">825 pts</p>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground mb-1">Profit Factor</p>
+                      <p className="text-xl font-bold text-foreground">2.15</p>
                     </div>
-                    <div className="p-3 bg-secondary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Leverage</p>
-                      <p className="text-lg font-bold text-primary">5x</p>
-                    </div>
-                    <div className="p-3 bg-primary/20 border border-primary/30 rounded-lg">
-                      <p className="text-xs text-muted-foreground">Lot Size</p>
-                      <p className="text-2xl font-bold text-primary">0.19</p>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground mb-1">Kelly %</p>
+                      <p className="text-xl font-bold text-accent">12.5%</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              {/* Options Bias */}
-              <Card className="hover-glow">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    Options Market Sentiment
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Bias</span>
-                    <Badge className="bg-success text-success-foreground">CALL (Bullish)</Badge>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-3 bg-secondary/30 rounded">
-                      <p className="text-xs text-muted-foreground">Delta</p>
-                      <p className="text-lg font-bold">0.32</p>
-                    </div>
-                    <div className="text-center p-3 bg-secondary/30 rounded">
-                      <p className="text-xs text-muted-foreground">IVR</p>
-                      <p className="text-lg font-bold">45%</p>
-                    </div>
-                    <div className="text-center p-3 bg-secondary/30 rounded">
-                      <p className="text-xs text-muted-foreground">Expiry</p>
-                      <p className="text-lg font-bold">~14d</p>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <p className="text-sm font-semibold mb-1">Recommendation</p>
-                    <p className="text-foreground">BTCUSD-Call Strike 105,000</p>
-                    <p className="text-xs text-muted-foreground">Mid: $145.30 • R:R 2.2</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <PerformanceCard />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="trade" className="space-y-4 animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <QuickTradeCard symbol={activeSymbol} currentPrice={marketData.price} />
+              <SignalStrengthCard signal={signal} />
+              <GannLevelsCard levels={gannLevels} currentPrice={marketData.price} />
             </div>
           </TabsContent>
         </Tabs>
