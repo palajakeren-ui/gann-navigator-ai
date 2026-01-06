@@ -12,6 +12,13 @@ import {
   Shield,
   Calendar,
   BarChart3,
+  Zap,
+  Eye,
+  AlertTriangle,
+  FileText,
+  BookOpen,
+  Server,
+  Crosshair,
 } from "lucide-react";
 
 const navItems = [
@@ -20,13 +27,20 @@ const navItems = [
   { icon: Search, label: "Scanner", path: "/scanner" },
   { icon: Calendar, label: "Forecasting", path: "/forecasting" },
   { icon: Sparkles, label: "Gann Analysis", path: "/gann" },
+  { icon: Crosshair, label: "Gann Tools", path: "/gann-tools" },
   { icon: Telescope, label: "Astro Cycles", path: "/astro" },
   { icon: Activity, label: "Ehlers DSP", path: "/ehlers" },
   { icon: Brain, label: "AI Models", path: "/ai" },
   { icon: Target, label: "Options", path: "/options" },
   { icon: Shield, label: "Risk Manager", path: "/risk" },
   { icon: BarChart3, label: "Backtest", path: "/backtest" },
-  { icon: Target, label: "Gann Tools", path: "/gann-tools" },
+  { icon: Zap, label: "Trading Mode", path: "/trading-mode" },
+  { icon: Zap, label: "HFT", path: "/hft" },
+  { icon: Eye, label: "Pattern Recognition", path: "/pattern-recognition" },
+  { icon: AlertTriangle, label: "Slippage/Spike", path: "/slippage-spike" },
+  { icon: FileText, label: "Reports", path: "/reports" },
+  { icon: BookOpen, label: "Journal", path: "/journal" },
+  { icon: Server, label: "Backend API", path: "/backend-api" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
