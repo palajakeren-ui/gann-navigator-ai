@@ -17,6 +17,13 @@ import Risk from "./pages/Risk";
 import Backtest from "./pages/Backtest";
 import Settings from "./pages/Settings";
 import GannTools from "./pages/GannTools";
+import TradingMode from "./pages/TradingMode";
+import HFT from "./pages/HFT";
+import PatternRecognition from "./pages/PatternRecognition";
+import SlippageSpike from "./pages/SlippageSpike";
+import Reports from "./pages/Reports";
+import Journal from "./pages/Journal";
+import BackendAPI from "./pages/BackendAPI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +50,13 @@ const App = () => (
               <Route path="/risk" element={<Risk />} />
               <Route path="/backtest" element={<Backtest />} />
               <Route path="/gann-tools" element={<GannTools />} />
+              <Route path="/trading-mode" element={<TradingMode />} />
+              <Route path="/hft" element={<HFT />} />
+              <Route path="/pattern-recognition" element={<PatternRecognition />} />
+              <Route path="/slippage-spike" element={<SlippageSpike />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/backend-api" element={<BackendAPI />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
