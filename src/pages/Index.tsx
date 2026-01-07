@@ -5,7 +5,6 @@ import { TrendingUp, Activity, DollarSign, Percent, Layers, RefreshCw, Wifi } fr
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from "recharts";
 import { GannSquareChart } from "@/components/charts/GannSquareChart";
 import { GannWheelChart } from "@/components/charts/GannWheelChart";
-import { CandlestickChart } from "@/components/charts/CandlestickChart";
 import { GannCalculator } from "@/components/calculators/GannCalculator";
 import { GannFanChart } from "@/components/charts/GannFanChart";
 import { GannBoxChart } from "@/components/charts/GannBoxChart";
@@ -18,7 +17,7 @@ import { useLiveData } from "@/hooks/useLiveData";
 import LiveSignalCard from "@/components/dashboard/LiveSignalCard";
 import GannLevelsPanel from "@/components/dashboard/GannLevelsPanel";
 import AstroSummaryCard from "@/components/dashboard/AstroSummaryCard";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 
 const Index = () => {
   // Use unified live data hook
@@ -27,7 +26,6 @@ const Index = () => {
     gannLevels,
     nearestSupport,
     nearestResistance,
-    timeCycles,
     astroData,
     ehlersData,
     mlPredictions,
@@ -82,12 +80,7 @@ const Index = () => {
       </div>
 
       {/* Live Trading Signal */}
-      <LiveSignalCard 
-        signal={tradingSignal} 
-        marketData={marketData} 
-        mlPredictions={mlPredictions}
-        ehlersScore={ehlersData.score}
-      />
+      <LiveSignalCard signal={tradingSignal} />
 
       {/* Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -100,10 +93,7 @@ const Index = () => {
         />
 
         {/* Astro Summary Card */}
-        <AstroSummaryCard 
-          astroData={astroData}
-          timeCycles={timeCycles}
-        />
+        <AstroSummaryCard astroData={astroData} />
 
         {/* Quick Stats Card */}
         <Card className="p-4 border-border bg-card">
@@ -310,8 +300,8 @@ const Index = () => {
               </div>
               <div className="p-3 bg-secondary/50 rounded-lg">
                 <p className="text-xs text-muted-foreground">Signal</p>
-                <Badge className={tradingSignal?.direction === 'LONG' ? "bg-success" : tradingSignal?.direction === 'SHORT' ? "bg-destructive" : ""}>
-                  {tradingSignal?.direction || 'NEUTRAL'}
+                <Badge className={tradingSignal?.direction === 'strong_buy' || tradingSignal?.direction === 'buy' ? "bg-success" : tradingSignal?.direction === 'strong_sell' || tradingSignal?.direction === 'sell' ? "bg-destructive" : ""}>
+                  {tradingSignal?.direction?.replace('_', ' ').toUpperCase() || 'NEUTRAL'}
                 </Badge>
               </div>
             </div>
@@ -340,7 +330,7 @@ const Index = () => {
                   <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
                     <span className="text-sm font-bold text-accent">{level.degree}°</span>
                     <span className="text-sm font-mono text-foreground">${level.price.toFixed(2)}</span>
-                    <Badge variant="outline" className={`text-xs ${level.type === 'support' ? 'border-success text-success' : 'border-destructive text-destructive'}`}>
+                    <Badge variant={level.type === 'resistance' ? 'destructive' : 'default'} className={level.type === 'support' ? 'bg-success' : ''}>
                       {level.type}
                     </Badge>
                   </div>
@@ -349,78 +339,59 @@ const Index = () => {
             </Card>
 
             <Card className="p-4 md:p-6 border-border bg-card">
-              <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <Activity className="w-5 h-5 mr-2 text-accent" />
-                Fibonacci Levels
-              </h4>
+              <h4 className="text-lg font-semibold text-foreground mb-4">Fibonacci Levels</h4>
               <div className="space-y-2">
-                {[
-                  { level: "0.0%", price: `$${(currentPrice * 0.95).toFixed(2)}` },
-                  { level: "23.6%", price: `$${(currentPrice * 0.976).toFixed(2)}` },
-                  { level: "38.2%", price: `$${(currentPrice * 0.992).toFixed(2)}` },
-                  { level: "50.0%", price: `$${(currentPrice * 1.00).toFixed(2)}` },
-                  { level: "61.8%", price: `$${(currentPrice * 1.018).toFixed(2)}` },
-                  { level: "78.6%", price: `$${(currentPrice * 1.036).toFixed(2)}` },
-                  { level: "100%", price: `$${(currentPrice * 1.05).toFixed(2)}` },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
-                    <span className="text-sm font-mono text-primary">{item.level}</span>
-                    <span className="text-sm font-mono text-foreground">{item.price}</span>
-                  </div>
-                ))}
+                {[0, 0.236, 0.382, 0.5, 0.618, 0.786, 1].map((fib) => {
+                  const level = currentPrice * (1 + (fib - 0.5) * 0.1);
+                  return (
+                    <div key={fib} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
+                      <span className="text-sm text-muted-foreground">{(fib * 100).toFixed(1)}%</span>
+                      <span className="text-sm font-mono text-foreground">${level.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </Card>
 
-            <GannCalculator currentPrice={currentPrice} />
+            <GannCalculator />
           </div>
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-lg font-semibold mb-4">Gann Square of 9</h3>
-              <GannSquareChart currentPrice={currentPrice} />
-            </Card>
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-lg font-semibold mb-4">Gann Wheel</h3>
-              <GannWheelChart currentPrice={currentPrice} />
-            </Card>
+          <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 md:mb-4">Visual Gann Analysis Tools</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <GannSquareChart />
+            <GannWheelChart />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-lg font-semibold mb-4">Gann Fan Chart</h3>
-              <GannFanChart currentPrice={currentPrice} />
-            </Card>
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-lg font-semibold mb-4">Gann Box</h3>
-              <GannBoxChart currentPrice={currentPrice} />
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <GannFanChart />
+            <GannBoxChart />
           </div>
         </TabsContent>
 
         <TabsContent value="forecasting" className="space-y-4 mt-4">
-          <GannForecastingCalculator currentPrice={currentPrice} />
+          <GannForecastingCalculator />
         </TabsContent>
 
         <TabsContent value="risk" className="space-y-4 mt-4">
           <Card className="p-4 md:p-6 border-border bg-card">
-            <h3 className="text-lg font-semibold mb-4">Position Size Calculator</h3>
+            <h3 className="text-lg md:text-xl font-semibold text-foreground mb-4">Position Size Calculator</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 bg-secondary/50 rounded-lg">
-                <p className="text-xs text-muted-foreground">Entry Price</p>
-                <p className="text-xl font-bold">${currentPrice.toFixed(2)}</p>
+              <div className="p-4 bg-secondary/50 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground mb-1">Account Size</p>
+                <p className="text-2xl font-bold text-foreground">$100,000</p>
               </div>
-              <div className="p-3 bg-secondary/50 rounded-lg">
-                <p className="text-xs text-muted-foreground">Stop Loss</p>
-                <p className="text-xl font-bold text-destructive">${(currentPrice * 0.99).toFixed(2)}</p>
+              <div className="p-4 bg-secondary/50 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground mb-1">Risk %</p>
+                <p className="text-2xl font-bold text-primary">2%</p>
               </div>
-              <div className="p-3 bg-secondary/50 rounded-lg">
-                <p className="text-xs text-muted-foreground">Take Profit</p>
-                <p className="text-xl font-bold text-success">${(currentPrice * 1.03).toFixed(2)}</p>
+              <div className="p-4 bg-secondary/50 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground mb-1">Risk Amount</p>
+                <p className="text-2xl font-bold text-destructive">$2,000</p>
               </div>
-              <div className="p-3 bg-secondary/50 rounded-lg">
-                <p className="text-xs text-muted-foreground">Position Size</p>
-                <p className="text-xl font-bold text-primary">0.19 lots</p>
+              <div className="p-4 bg-secondary/50 rounded-lg text-center">
+                <p className="text-xs text-muted-foreground mb-1">Position Size</p>
+                <p className="text-2xl font-bold text-success">0.19 BTC</p>
               </div>
             </div>
           </Card>

@@ -12,12 +12,13 @@ import { cn } from '@/lib/utils';
 
 interface AstroSummaryCardProps {
   astroData: {
-    positions: Array<{ planet: string; sign: string; degree: number; retrograde: boolean }>;
-    aspects: Array<{ planet1: string; planet2: string; aspect: string; influence: string; strength: number }>;
-    lunarPhase: { phase: string; percentage: number; illumination: number; influence: string };
-    sentiment: { score: number; direction: string; confidence: number };
+    positions?: Array<{ planet: string; sign: string; degree: number; retrograde: boolean }>;
+    planets?: Array<{ name: string; sign: string; degree: number; retrograde: boolean }>;
+    aspects: Array<{ planet1: string; planet2: string; aspect: string; influence: string | number; strength: number }>;
+    lunarPhase: { phase: string; name?: string; percentage: number; illumination: number; influence: string | number };
+    sentiment: { score: number; direction: string; confidence: number; strength?: number };
     retrogrades: Array<{ planet: string; isRetrograde: boolean }>;
-    currentHour: { planet: string; quality: string } | null;
+    currentHour?: { planet: string; quality: string; isFavorable?: boolean } | null;
   };
   className?: string;
 }
@@ -26,11 +27,12 @@ export const AstroSummaryCard: React.FC<AstroSummaryCardProps> = ({
   astroData,
   className
 }) => {
-  const { positions, aspects, lunarPhase, sentiment, retrogrades, currentHour } = astroData;
+  const { aspects, lunarPhase, sentiment, retrogrades, currentHour } = astroData;
+  const positions = astroData.positions || astroData.planets?.map(p => ({ planet: p.name, sign: p.sign, degree: p.degree, retrograde: p.retrograde })) || [];
   
   const retrogradeCount = retrogrades.filter(r => r.isRetrograde).length;
-  const bullishAspects = aspects.filter(a => a.influence === 'bullish');
-  const bearishAspects = aspects.filter(a => a.influence === 'bearish');
+  const bullishAspects = aspects.filter(a => a.influence === 'bullish' || (typeof a.influence === 'number' && a.influence > 0));
+  const bearishAspects = aspects.filter(a => a.influence === 'bearish' || (typeof a.influence === 'number' && a.influence < 0));
 
   return (
     <Card className={cn('', className)}>
@@ -70,7 +72,7 @@ export const AstroSummaryCard: React.FC<AstroSummaryCardProps> = ({
           <div className="text-center p-3 bg-secondary/50 rounded-lg">
             <Moon className="w-6 h-6 mx-auto mb-1 text-blue-400" />
             <p className="text-xs text-muted-foreground mb-1">Lunar Phase</p>
-            <p className="text-sm font-semibold text-foreground">{lunarPhase.phase}</p>
+            <p className="text-sm font-semibold text-foreground">{lunarPhase.name || lunarPhase.phase}</p>
             <p className="text-xs text-muted-foreground">{lunarPhase.illumination}% lit</p>
           </div>
           <div className="text-center p-3 bg-secondary/50 rounded-lg">
@@ -119,8 +121,8 @@ export const AstroSummaryCard: React.FC<AstroSummaryCardProps> = ({
                   variant="outline" 
                   className={cn(
                     'text-xs',
-                    aspect.influence === 'bullish' ? 'text-success border-success' :
-                    aspect.influence === 'bearish' ? 'text-destructive border-destructive' :
+                    (aspect.influence === 'bullish' || (typeof aspect.influence === 'number' && aspect.influence > 0)) ? 'text-success border-success' :
+                    (aspect.influence === 'bearish' || (typeof aspect.influence === 'number' && aspect.influence < 0)) ? 'text-destructive border-destructive' :
                     'text-muted-foreground'
                   )}
                 >
@@ -148,7 +150,10 @@ export const AstroSummaryCard: React.FC<AstroSummaryCardProps> = ({
         </div>
 
         {/* Influence */}
-        <p className="text-xs text-muted-foreground italic">{lunarPhase.influence}</p>
+        <p className="text-xs text-muted-foreground italic">
+          {typeof lunarPhase.influence === 'string' ? lunarPhase.influence : 
+           lunarPhase.influence > 0 ? 'Bullish lunar influence' : 'Bearish lunar influence'}
+        </p>
       </CardContent>
     </Card>
   );

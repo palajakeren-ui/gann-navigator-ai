@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Sparkles, TrendingUp, TrendingDown, Activity, Target, Shield, Zap, Moon, Clock, Brain, LineChart } from "lucide-react";
+import { Moon, Clock, Brain, Activity } from "lucide-react";
 import { useLiveData } from "@/hooks/useLiveData";
 import LiveSignalCard from "@/components/dashboard/LiveSignalCard";
 import GannLevelsPanel from "@/components/dashboard/GannLevelsPanel";
@@ -62,12 +62,7 @@ const Gann = () => {
       </Card>
 
       {/* Live Signal Card */}
-      <LiveSignalCard 
-        signal={tradingSignal}
-        marketData={marketData}
-        mlPredictions={mlPredictions}
-        ehlersScore={ehlersData.score}
-      />
+      <LiveSignalCard signal={tradingSignal} />
 
       <Tabs defaultValue="gann" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
@@ -160,11 +155,11 @@ const Gann = () => {
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Total Planetary Score</span>
-                  <Badge variant="outline" className={astroData.marketSentiment.direction === 'bullish' ? "text-success border-success" : "text-destructive border-destructive"}>
-                    {astroData.marketSentiment.direction === 'bullish' ? '+' : '-'}{(astroData.marketSentiment.strength * 100).toFixed(0)}% {astroData.marketSentiment.direction}
+                  <Badge variant="outline" className={astroData.sentiment.direction === 'bullish' ? "text-success border-success" : "text-destructive border-destructive"}>
+                    {astroData.sentiment.direction === 'bullish' ? '+' : '-'}{(astroData.sentiment.strength * 100).toFixed(0)}% {astroData.sentiment.direction}
                   </Badge>
                 </div>
-                <Progress value={50 + astroData.marketSentiment.strength * 50} className="mb-4" />
+                <Progress value={50 + astroData.sentiment.strength * 50} className="mb-4" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="bg-success/10 rounded-lg p-3">
                     <p className="text-xs text-muted-foreground mb-1">Bullish Aspects</p>
@@ -302,8 +297,8 @@ const Gann = () => {
                 </TableHeader>
                 <TableBody>
                   {mlPredictions.models.map((model) => (
-                    <TableRow key={model.name}>
-                      <TableCell className="font-semibold">{model.name}</TableCell>
+                    <TableRow key={model.model}>
+                      <TableCell className="font-semibold">{model.model}</TableCell>
                       <TableCell>
                         <Badge variant={model.prediction === 'bullish' ? "default" : model.prediction === 'bearish' ? "destructive" : "secondary"} className={model.prediction === 'bullish' ? "bg-success" : ""}>
                           {model.prediction}
@@ -313,7 +308,7 @@ const Gann = () => {
                       <TableCell>
                         <Progress value={model.confidence} className="w-16" />
                       </TableCell>
-                      <TableCell>{(model.weight * 100).toFixed(0)}%</TableCell>
+                      <TableCell>{(model.probability * 100).toFixed(0)}%</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
