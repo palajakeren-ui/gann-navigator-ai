@@ -6,38 +6,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Bar } from "recharts";
 import { Activity, TrendingUp, TrendingDown, Waves, Signal, RefreshCw, Settings } from "lucide-react";
-import { useState } from "react";
-
-// Generate mock data for charts
-const cyclePeriodData = Array.from({ length: 100 }, (_, i) => ({
-  bar: i + 1,
-  period: 20 + Math.sin(i / 8) * 8 + Math.random() * 2,
-  mama: 104000 + Math.sin(i / 12) * 1500 + Math.random() * 200,
-  fama: 104000 + Math.sin(i / 12 - 0.8) * 1500 + Math.random() * 200,
-  fisher: Math.sin(i / 6) * 1.5,
-  cyber: Math.sin(i / 10) * 0.05,
-  smoother: 104000 + Math.sin(i / 15) * 1200,
-}));
-
-const indicators = [
-  { name: "Fisher Transform", value: "1.33", signal: "Bullish Cross", confidence: 93, trend: "up", description: "Price momentum indicator" },
-  { name: "Smoothed RSI", value: "67.2", signal: "Bullish", confidence: 87, trend: "up", description: "Noise-reduced RSI" },
-  { name: "Super Smoother", value: "+0.024", signal: "Trend Up", confidence: 85, trend: "up", description: "2-pole filter" },
-  { name: "MAMA", value: "104,400", signal: "Bullish", confidence: 90, trend: "up", description: "MESA Adaptive MA" },
-  { name: "FAMA", value: "104,350", signal: "Following", confidence: 88, trend: "up", description: "Following Adaptive MA" },
-  { name: "Instantaneous Trendline", value: "104,100", signal: "Uptrend", confidence: 89, trend: "up", description: "Hilbert Transform" },
-  { name: "Cyber Cycle", value: "+0.026", signal: "Rising", confidence: 86, trend: "up", description: "Cycle momentum" },
-  { name: "Dominant Cycle", value: "24.0 days", signal: "Strong", confidence: 96, trend: "up", description: "Detected period" },
-  { name: "Sinewave Indicator", value: "+0.021", signal: "Bullish Phase", confidence: 84, trend: "up", description: "Cycle phase" },
-  { name: "Roofing Filter", value: "+0.017", signal: "Trend Mode", confidence: 80, trend: "up", description: "Highpass + Smoother" },
-  { name: "Decycler", value: "+0.028", signal: "Bullish", confidence: 82, trend: "up", description: "Trend extraction" },
-  { name: "Bandpass Filter", value: "0.85", signal: "Cycle Mode", confidence: 78, trend: "neutral", description: "Cycle isolation" },
-];
-
-const compositeScore = 0.88;
+import { useState, useMemo } from "react";
+import { useLiveData } from "@/hooks/useLiveData";
 
 const Ehlers = () => {
   const [activeTab, setActiveTab] = useState("overview");
+
+  const { ehlersData, marketData, refresh } = useLiveData({
+    symbol: 'BTCUSDT',
+    basePrice: 104525
+  });
+
+  // Generate chart data based on live data
+  const cyclePeriodData = useMemo(() => Array.from({ length: 100 }, (_, i) => ({
+    bar: i + 1,
+    period: ehlersData.dominantCycle + Math.sin(i / 8) * 8 + Math.random() * 2,
+    mama: marketData.price + Math.sin(i / 12) * 1500 + Math.random() * 200,
+    fama: marketData.price + Math.sin(i / 12 - 0.8) * 1500 + Math.random() * 200,
+    fisher: Math.sin(i / 6) * 1.5,
+    cyber: Math.sin(i / 10) * 0.05,
+    smoother: marketData.price + Math.sin(i / 15) * 1200,
+  })), [ehlersData.dominantCycle, marketData.price]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -55,7 +44,7 @@ const Ehlers = () => {
             <Settings className="w-4 h-4 mr-1" />
             Configure
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={refresh}>
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -70,21 +59,21 @@ const Ehlers = () => {
           </div>
           <Badge 
             variant="outline" 
-            className={`text-lg px-4 py-2 ${compositeScore > 0.7 ? 'text-success border-success bg-success/10' : 'text-warning border-warning'}`}
+            className={`text-lg px-4 py-2 ${ehlersData.score > 60 ? 'text-success border-success bg-success/10' : ehlersData.score < 40 ? 'text-destructive border-destructive bg-destructive/10' : 'text-warning border-warning bg-warning/10'}`}
           >
-            {(compositeScore * 100).toFixed(0)}% Bullish
+            {ehlersData.score.toFixed(0)}% {ehlersData.direction}
           </Badge>
         </div>
-        <Progress value={compositeScore * 100} className="h-3" />
+        <Progress value={ehlersData.score} className="h-3" />
       </Card>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { name: "Dominant Cycle", value: "24 bars", status: "Active", color: "text-primary" },
-          { name: "MAMA Signal", value: "Buy", status: "Confirmed", color: "text-success" },
-          { name: "Fisher Transform", value: "1.33", status: "Bullish Cross", color: "text-success" },
-          { name: "Trend Mode", value: "Trending", status: "High Confidence", color: "text-accent" },
+          { name: "Dominant Cycle", value: `${ehlersData.dominantCycle} bars`, status: "Active", color: "text-primary" },
+          { name: "Trend Mode", value: ehlersData.trendMode ? "Trending" : "Cycling", status: ehlersData.trendMode ? "Strong" : "Weak", color: ehlersData.trendMode ? "text-success" : "text-warning" },
+          { name: "Direction", value: ehlersData.direction, status: "Current", color: ehlersData.direction === 'bullish' ? "text-success" : ehlersData.direction === 'bearish' ? "text-destructive" : "text-muted-foreground" },
+          { name: "Score", value: `${ehlersData.score.toFixed(0)}%`, status: ehlersData.score > 60 ? "Strong" : "Moderate", color: ehlersData.score > 60 ? "text-success" : "text-warning" },
         ].map((item, idx) => (
           <Card key={item.name} className="p-6 glass-card animate-scale-in" style={{ animationDelay: `${idx * 100}ms` }}>
             <div className="flex items-start justify-between mb-2">
@@ -120,30 +109,29 @@ const Ehlers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {indicators.map((ind) => (
+                {ehlersData.indicators.map((ind) => (
                   <TableRow key={ind.name}>
                     <TableCell>
                       <div>
                         <p className="font-semibold text-foreground">{ind.name}</p>
-                        <p className="text-xs text-muted-foreground">{ind.description}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono">{ind.value}</TableCell>
+                    <TableCell className="font-mono">{ind.value.toFixed(4)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-success border-success">
+                      <Badge variant="outline" className={ind.signal === 'bullish' ? "text-success border-success" : ind.signal === 'bearish' ? "text-destructive border-destructive" : ""}>
                         {ind.signal}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Progress value={ind.confidence} className="w-16" />
-                        <span className="text-xs">{ind.confidence}%</span>
+                        <span className="text-xs">{ind.confidence.toFixed(0)}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {ind.trend === "up" ? (
+                      {ind.signal === 'bullish' ? (
                         <TrendingUp className="w-5 h-5 text-success" />
-                      ) : ind.trend === "down" ? (
+                      ) : ind.signal === 'bearish' ? (
                         <TrendingDown className="w-5 h-5 text-destructive" />
                       ) : (
                         <Activity className="w-5 h-5 text-muted-foreground" />
@@ -185,15 +173,15 @@ const Ehlers = () => {
             <div className="mt-4 grid grid-cols-3 gap-4">
               <div className="p-3 rounded-lg bg-primary/10 text-center">
                 <p className="text-xs text-muted-foreground mb-1">MAMA Value</p>
-                <p className="text-xl font-bold text-primary">104,400</p>
+                <p className="text-xl font-bold text-primary">{marketData.price.toFixed(0)}</p>
               </div>
               <div className="p-3 rounded-lg bg-chart-2/10 text-center">
                 <p className="text-xs text-muted-foreground mb-1">FAMA Value</p>
-                <p className="text-xl font-bold text-chart-2">104,350</p>
+                <p className="text-xl font-bold text-chart-2">{(marketData.price * 0.998).toFixed(0)}</p>
               </div>
               <div className="p-3 rounded-lg bg-success/10 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Signal</p>
-                <p className="text-xl font-bold text-success">BULLISH</p>
+                <p className="text-xl font-bold text-success">{ehlersData.direction.toUpperCase()}</p>
               </div>
             </div>
           </Card>
@@ -226,8 +214,8 @@ const Ehlers = () => {
               </ResponsiveContainer>
               <div className="mt-4 p-4 rounded-lg bg-primary/10">
                 <p className="text-sm text-muted-foreground mb-1">Detected Dominant Cycle</p>
-                <p className="text-3xl font-bold text-primary">24.0 days</p>
-                <p className="text-xs text-muted-foreground mt-1">96% confidence</p>
+                <p className="text-3xl font-bold text-primary">{ehlersData.dominantCycle} bars</p>
+                <p className="text-xs text-muted-foreground mt-1">High confidence</p>
               </div>
             </Card>
 

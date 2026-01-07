@@ -3,159 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { 
   Search, TrendingUp, TrendingDown, Minus, RefreshCw, 
-  Download, Filter, Bell, Star, ArrowUpDown, Eye,
-  Activity, Target, Brain, Telescope
+  Download, Bell, Star, Eye, Activity
 } from "lucide-react";
 import { useState } from "react";
+import { useLiveData } from "@/hooks/useLiveData";
 
 const timeframes = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN"];
-
-const scanResults = [
-  { 
-    symbol: "BTCUSD", 
-    asset: "Crypto",
-    timeframe: "H4",
-    signal: "BUY", 
-    strength: "STRONG",
-    price: 104525, 
-    change: 2.34, 
-    pattern: "Bullish Gann Fan",
-    gann: 92,
-    astro: 85,
-    ehlers: 88,
-    ml: 90,
-    confluence: 5,
-    entry: 104525,
-    sl: 103700,
-    tp: 106000,
-    rr: 1.79,
-    starred: true,
-  },
-  { 
-    symbol: "ETHUSD", 
-    asset: "Crypto",
-    timeframe: "H1",
-    signal: "BUY", 
-    strength: "STRONG",
-    price: 3890, 
-    change: 1.56, 
-    pattern: "Square of 9 Support",
-    gann: 88,
-    astro: 82,
-    ehlers: 85,
-    ml: 87,
-    confluence: 4,
-    entry: 3890,
-    sl: 3750,
-    tp: 4150,
-    rr: 1.86,
-    starred: true,
-  },
-  { 
-    symbol: "XAUUSD", 
-    asset: "Commodity",
-    timeframe: "D1",
-    signal: "SELL", 
-    strength: "MEDIUM",
-    price: 2045.30, 
-    change: -0.45, 
-    pattern: "Bearish Divergence",
-    gann: 45,
-    astro: 38,
-    ehlers: 42,
-    ml: 48,
-    confluence: 2,
-    entry: 2045.30,
-    sl: 2065,
-    tp: 2010,
-    rr: 1.79,
-    starred: false,
-  },
-  { 
-    symbol: "EURUSD", 
-    asset: "Forex",
-    timeframe: "H4",
-    signal: "BUY", 
-    strength: "MEDIUM",
-    price: 1.0875, 
-    change: 0.12, 
-    pattern: "1x1 Angle Support",
-    gann: 72,
-    astro: 68,
-    ehlers: 70,
-    ml: 75,
-    confluence: 3,
-    entry: 1.0875,
-    sl: 1.0820,
-    tp: 1.0980,
-    rr: 1.91,
-    starred: false,
-  },
-  { 
-    symbol: "GBPUSD", 
-    asset: "Forex",
-    timeframe: "M30",
-    signal: "BUY", 
-    strength: "STRONG",
-    price: 1.2654, 
-    change: 0.23, 
-    pattern: "Planetary Confluence",
-    gann: 82,
-    astro: 90,
-    ehlers: 78,
-    ml: 84,
-    confluence: 4,
-    entry: 1.2654,
-    sl: 1.2600,
-    tp: 1.2750,
-    rr: 1.78,
-    starred: true,
-  },
-  { 
-    symbol: "SOLUSD", 
-    asset: "Crypto",
-    timeframe: "H1",
-    signal: "BUY", 
-    strength: "STRONG",
-    price: 156, 
-    change: 3.45, 
-    pattern: "Square of 9 Breakout",
-    gann: 90,
-    astro: 85,
-    ehlers: 82,
-    ml: 88,
-    confluence: 5,
-    entry: 156,
-    sl: 148,
-    tp: 172,
-    rr: 2.0,
-    starred: false,
-  },
-  { 
-    symbol: "US500", 
-    asset: "Index",
-    timeframe: "D1",
-    signal: "NEUTRAL", 
-    strength: "WEAK",
-    price: 4782.50, 
-    change: 0.08, 
-    pattern: "Consolidation",
-    gann: 52,
-    astro: 48,
-    ehlers: 55,
-    ml: 50,
-    confluence: 2,
-    entry: 4782.50,
-    sl: 4720,
-    tp: 4850,
-    rr: 1.08,
-    starred: false,
-  },
-];
 
 const Scanner = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -163,6 +19,136 @@ const Scanner = () => {
   const [selectedAsset, setSelectedAsset] = useState("all");
   const [selectedSignal, setSelectedSignal] = useState("all");
   const [sortBy, setSortBy] = useState("confluence");
+
+  // Use live data for dynamic prices
+  const { marketData, gannLevels, ehlersData, mlPredictions, tradingSignal, refresh } = useLiveData({
+    symbol: 'BTCUSDT',
+    basePrice: 104525
+  });
+
+  // Generate scan results with live data
+  const scanResults = [
+    { 
+      symbol: "BTCUSD", 
+      asset: "Crypto",
+      timeframe: "H4",
+      signal: tradingSignal?.direction || "BUY", 
+      strength: "STRONG",
+      price: marketData.price, 
+      change: marketData.changePercent, 
+      pattern: "Bullish Gann Fan",
+      gann: 92,
+      astro: 85,
+      ehlers: ehlersData.score,
+      ml: mlPredictions.consensusConfidence,
+      confluence: 5,
+      entry: marketData.price,
+      sl: marketData.price * 0.99,
+      tp: marketData.price * 1.03,
+      rr: 3.0,
+      starred: true,
+    },
+    { 
+      symbol: "ETHUSD", 
+      asset: "Crypto",
+      timeframe: "H1",
+      signal: "BUY", 
+      strength: "STRONG",
+      price: 3890, 
+      change: 1.56, 
+      pattern: "Square of 9 Support",
+      gann: 88,
+      astro: 82,
+      ehlers: 85,
+      ml: 87,
+      confluence: 4,
+      entry: 3890,
+      sl: 3750,
+      tp: 4150,
+      rr: 1.86,
+      starred: true,
+    },
+    { 
+      symbol: "XAUUSD", 
+      asset: "Commodity",
+      timeframe: "D1",
+      signal: "SELL", 
+      strength: "MEDIUM",
+      price: 2045.30, 
+      change: -0.45, 
+      pattern: "Bearish Divergence",
+      gann: 45,
+      astro: 38,
+      ehlers: 42,
+      ml: 48,
+      confluence: 2,
+      entry: 2045.30,
+      sl: 2065,
+      tp: 2010,
+      rr: 1.79,
+      starred: false,
+    },
+    { 
+      symbol: "EURUSD", 
+      asset: "Forex",
+      timeframe: "H4",
+      signal: "BUY", 
+      strength: "MEDIUM",
+      price: 1.0875, 
+      change: 0.12, 
+      pattern: "1x1 Angle Support",
+      gann: 72,
+      astro: 68,
+      ehlers: 70,
+      ml: 75,
+      confluence: 3,
+      entry: 1.0875,
+      sl: 1.0820,
+      tp: 1.0980,
+      rr: 1.91,
+      starred: false,
+    },
+    { 
+      symbol: "GBPUSD", 
+      asset: "Forex",
+      timeframe: "M30",
+      signal: "BUY", 
+      strength: "STRONG",
+      price: 1.2654, 
+      change: 0.23, 
+      pattern: "Planetary Confluence",
+      gann: 82,
+      astro: 90,
+      ehlers: 78,
+      ml: 84,
+      confluence: 4,
+      entry: 1.2654,
+      sl: 1.2600,
+      tp: 1.2750,
+      rr: 1.78,
+      starred: true,
+    },
+    { 
+      symbol: "SOLUSD", 
+      asset: "Crypto",
+      timeframe: "H1",
+      signal: "BUY", 
+      strength: "STRONG",
+      price: 156, 
+      change: 3.45, 
+      pattern: "Square of 9 Breakout",
+      gann: 90,
+      astro: 85,
+      ehlers: 82,
+      ml: 88,
+      confluence: 5,
+      entry: 156,
+      sl: 148,
+      tp: 172,
+      rr: 2.0,
+      starred: false,
+    },
+  ];
 
   const filteredResults = scanResults
     .filter(r => {
@@ -196,7 +182,7 @@ const Scanner = () => {
             <Download className="w-4 h-4 mr-1" />
             Export
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={refresh}>
             <RefreshCw className="w-4 h-4" />
             Scan Now
           </Button>
@@ -274,11 +260,11 @@ const Scanner = () => {
         </Card>
         <Card className="p-4 glass-card text-center">
           <p className="text-xs text-muted-foreground mb-1">Buy Signals</p>
-          <p className="text-2xl font-bold text-success">{filteredResults.filter(r => r.signal === "BUY").length}</p>
+          <p className="text-2xl font-bold text-success">{filteredResults.filter(r => r.signal === "BUY" || r.signal === "LONG").length}</p>
         </Card>
         <Card className="p-4 glass-card text-center">
           <p className="text-xs text-muted-foreground mb-1">Sell Signals</p>
-          <p className="text-2xl font-bold text-destructive">{filteredResults.filter(r => r.signal === "SELL").length}</p>
+          <p className="text-2xl font-bold text-destructive">{filteredResults.filter(r => r.signal === "SELL" || r.signal === "SHORT").length}</p>
         </Card>
         <Card className="p-4 glass-card text-center">
           <p className="text-xs text-muted-foreground mb-1">Strong Signals</p>
@@ -312,9 +298,6 @@ const Scanner = () => {
                 <th className="text-center py-3 px-2 text-xs font-semibold text-muted-foreground">Ehlers</th>
                 <th className="text-center py-3 px-2 text-xs font-semibold text-muted-foreground">ML</th>
                 <th className="text-center py-3 px-2 text-xs font-semibold text-muted-foreground">Confluence</th>
-                <th className="text-right py-3 px-2 text-xs font-semibold text-muted-foreground">Entry</th>
-                <th className="text-right py-3 px-2 text-xs font-semibold text-muted-foreground">SL</th>
-                <th className="text-right py-3 px-2 text-xs font-semibold text-muted-foreground">TP</th>
                 <th className="text-center py-3 px-2 text-xs font-semibold text-muted-foreground">R:R</th>
                 <th className="text-center py-3 px-2 text-xs font-semibold text-muted-foreground">Action</th>
               </tr>
@@ -324,7 +307,6 @@ const Scanner = () => {
                 <tr 
                   key={`${result.symbol}-${result.timeframe}`} 
                   className="border-b border-border hover:bg-secondary/50 transition-all"
-                  style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <td className="py-3 px-2">
                     <Star className={`w-4 h-4 cursor-pointer ${result.starred ? 'fill-warning text-warning' : 'text-muted-foreground'}`} />
@@ -341,8 +323,8 @@ const Scanner = () => {
                   <td className="py-3 px-2">
                     <div className="flex flex-col gap-1">
                       <Badge
-                        variant={result.signal === "BUY" ? "default" : result.signal === "SELL" ? "destructive" : "secondary"}
-                        className={result.signal === "BUY" ? "bg-success" : ""}
+                        variant={result.signal === "BUY" || result.signal === "LONG" ? "default" : result.signal === "SELL" || result.signal === "SHORT" ? "destructive" : "secondary"}
+                        className={result.signal === "BUY" || result.signal === "LONG" ? "bg-success" : ""}
                       >
                         {result.signal}
                       </Badge>
@@ -364,7 +346,7 @@ const Scanner = () => {
                     <p className="font-mono text-foreground">{result.price.toLocaleString()}</p>
                     <p className={`text-xs flex items-center justify-end gap-1 ${result.change > 0 ? 'text-success' : result.change < 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
                       {result.change > 0 ? <TrendingUp className="w-3 h-3" /> : result.change < 0 ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-                      {Math.abs(result.change)}%
+                      {Math.abs(result.change).toFixed(2)}%
                     </p>
                   </td>
                   <td className="py-3 px-2 text-center">
@@ -379,12 +361,12 @@ const Scanner = () => {
                   </td>
                   <td className="py-3 px-2 text-center">
                     <span className={`font-semibold ${result.ehlers > 70 ? "text-success" : result.ehlers > 50 ? "text-warning" : "text-muted-foreground"}`}>
-                      {result.ehlers}%
+                      {typeof result.ehlers === 'number' ? result.ehlers.toFixed(0) : result.ehlers}%
                     </span>
                   </td>
                   <td className="py-3 px-2 text-center">
                     <span className={`font-semibold ${result.ml > 70 ? "text-success" : result.ml > 50 ? "text-warning" : "text-muted-foreground"}`}>
-                      {result.ml}%
+                      {typeof result.ml === 'number' ? result.ml.toFixed(0) : result.ml}%
                     </span>
                   </td>
                   <td className="py-3 px-2 text-center">
@@ -401,9 +383,6 @@ const Scanner = () => {
                       {result.confluence}/5
                     </Badge>
                   </td>
-                  <td className="py-3 px-2 text-right font-mono text-sm text-foreground">{result.entry}</td>
-                  <td className="py-3 px-2 text-right font-mono text-sm text-destructive">{result.sl}</td>
-                  <td className="py-3 px-2 text-right font-mono text-sm text-success">{result.tp}</td>
                   <td className="py-3 px-2 text-center">
                     <Badge variant="outline" className="font-mono">{result.rr.toFixed(2)}</Badge>
                   </td>

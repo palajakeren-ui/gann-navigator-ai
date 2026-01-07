@@ -15,6 +15,7 @@ import {
   Grid, LayoutGrid, Columns
 } from "lucide-react";
 import { useState } from "react";
+import { useLiveData } from "@/hooks/useLiveData";
 
 const timeframes = [
   { label: "1M", value: "M1" },
@@ -29,13 +30,13 @@ const timeframes = [
 ];
 
 const symbols = [
-  { symbol: "BTCUSD", name: "Bitcoin", price: 104525, change: 2.34 },
-  { symbol: "ETHUSD", name: "Ethereum", price: 3890, change: 1.56 },
-  { symbol: "EURUSD", name: "Euro/USD", price: 1.0875, change: -0.12 },
-  { symbol: "XAUUSD", name: "Gold", price: 2045.30, change: 0.45 },
-  { symbol: "GBPUSD", name: "GBP/USD", price: 1.2654, change: 0.23 },
-  { symbol: "SOLUSD", name: "Solana", price: 156.80, change: 3.45 },
-  { symbol: "US500", name: "S&P 500", price: 4782.50, change: 0.08 },
+  { symbol: "BTCUSD", name: "Bitcoin", change: 2.34 },
+  { symbol: "ETHUSD", name: "Ethereum", change: 1.56 },
+  { symbol: "EURUSD", name: "Euro/USD", change: -0.12 },
+  { symbol: "XAUUSD", name: "Gold", change: 0.45 },
+  { symbol: "GBPUSD", name: "GBP/USD", change: 0.23 },
+  { symbol: "SOLUSD", name: "Solana", change: 3.45 },
+  { symbol: "US500", name: "S&P 500", change: 0.08 },
 ];
 
 const overlays = [
@@ -62,16 +63,6 @@ const drawingTools = [
   { name: "Freehand", icon: PenTool, key: "freehand" },
 ];
 
-const gannLevels = [
-  { type: "Resistance 3", price: 106200, strength: 75 },
-  { type: "Resistance 2", price: 105500, strength: 85 },
-  { type: "Resistance 1", price: 104800, strength: 92 },
-  { type: "Current", price: 104525, strength: 100 },
-  { type: "Support 1", price: 104100, strength: 88 },
-  { type: "Support 2", price: 103500, strength: 82 },
-  { type: "Support 3", price: 102800, strength: 70 },
-];
-
 const Charts = () => {
   const [activeTimeframe, setActiveTimeframe] = useState("H4");
   const [activeSymbol, setActiveSymbol] = useState("BTCUSD");
@@ -81,14 +72,16 @@ const Charts = () => {
     overlays.reduce((acc, o) => ({ ...acc, [o.key]: o.active }), {})
   );
 
-  const currentSymbol = symbols.find(s => s.symbol === activeSymbol) || symbols[0];
+  // Use live data hook
+  const { marketData, gannLevels, nearestSupport, nearestResistance, timeCycles, ehlersData, refresh } = useLiveData({
+    symbol: activeSymbol,
+    basePrice: 104525
+  });
+
+  const currentSymbol = { ...symbols.find(s => s.symbol === activeSymbol) || symbols[0], price: marketData.price };
 
   const toggleOverlay = (key: string) => {
     setActiveOverlays(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const clearDrawings = () => {
-    // Placeholder for clear drawings functionality
   };
 
   return (
@@ -137,7 +130,7 @@ const Charts = () => {
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4" />
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={refresh}>
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
@@ -214,7 +207,7 @@ const Charts = () => {
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Redo">
             <Redo className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearDrawings} title="Clear All">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Clear All">
             <Trash2 className="w-4 h-4" />
           </Button>
           <div className="h-6 w-px bg-border mx-2" />
@@ -272,39 +265,27 @@ const Charts = () => {
         {/* Sidebar - only show in single layout */}
         {chartLayout === "single" && (
           <div className="space-y-4">
-            {/* Gann Levels */}
+            {/* Gann Levels from live data */}
             <Card className="p-4 glass-card">
               <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary" />
                 Gann Levels
               </h3>
               <div className="space-y-2">
-                {gannLevels.map((level, idx) => (
+                {gannLevels.slice(0, 7).map((level, idx) => (
                   <div
                     key={idx}
                     className={`flex justify-between items-center text-sm p-2 rounded ${
-                      level.type === "Current"
+                      Math.abs(level.price - marketData.price) < 100
                         ? "bg-primary/20 border border-primary/40"
-                        : level.type.includes("Resistance")
+                        : level.type === 'resistance'
                         ? "bg-destructive/10"
                         : "bg-success/10"
                     }`}
                   >
-                    <span className={`${
-                      level.type === "Current"
-                        ? "text-foreground font-bold"
-                        : "text-muted-foreground"
-                    }`}>
-                      {level.type}
-                    </span>
-                    <span className={`font-mono ${
-                      level.type === "Current"
-                        ? "text-foreground font-bold"
-                        : level.type.includes("Resistance")
-                        ? "text-destructive"
-                        : "text-success"
-                    }`}>
-                      {level.price.toLocaleString()}
+                    <span className="text-muted-foreground">{level.degree}°</span>
+                    <span className={`font-mono ${level.type === 'resistance' ? 'text-destructive' : 'text-success'}`}>
+                      {level.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </span>
                   </div>
                 ))}
@@ -320,24 +301,18 @@ const Charts = () => {
                     <span className="text-sm text-foreground">Next Turn Date</span>
                     <Badge variant="outline" className="text-xs">High Prob</Badge>
                   </div>
-                  <p className="text-lg font-bold text-accent">Jan 8, 2025</p>
+                  <p className="text-lg font-bold text-accent">
+                    {timeCycles.nextTurnDate?.toLocaleDateString() || 'N/A'}
+                  </p>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mars Cycle</span>
-                    <span className="text-foreground font-mono">18 days</span>
+                    <span className="text-muted-foreground">Dominant Cycle</span>
+                    <span className="text-foreground font-mono">{ehlersData.dominantCycle} bars</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Jupiter Cycle</span>
-                    <span className="text-foreground font-mono">45 days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gann 90°</span>
-                    <span className="text-foreground font-mono">3 days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Square of 52</span>
-                    <span className="text-foreground font-mono">12 days</span>
+                    <span className="text-muted-foreground">Confidence</span>
+                    <span className="text-foreground font-mono">{timeCycles.confidence?.toFixed(0) || 85}%</span>
                   </div>
                 </div>
               </div>
@@ -350,13 +325,13 @@ const Charts = () => {
                 {[
                   { name: "Gann", value: 85, color: "bg-success" },
                   { name: "Astro", value: 72, color: "bg-accent" },
-                  { name: "Ehlers", value: 78, color: "bg-primary" },
+                  { name: "Ehlers", value: ehlersData.score, color: "bg-primary" },
                   { name: "ML", value: 88, color: "bg-chart-3" },
                 ].map((signal) => (
                   <div key={signal.name}>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-muted-foreground">{signal.name}</span>
-                      <span className="text-sm font-semibold text-foreground">{signal.value}%</span>
+                      <span className="text-sm font-semibold text-foreground">{signal.value.toFixed(0)}%</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div className={`h-full ${signal.color}`} style={{ width: `${signal.value}%` }} />
@@ -364,63 +339,6 @@ const Charts = () => {
                   </div>
                 ))}
               </div>
-            </Card>
-
-            {/* Overlay Settings */}
-            <Card className="p-4 glass-card">
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Overlay Settings
-              </h3>
-              <Tabs defaultValue="gann" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-3">
-                  <TabsTrigger value="gann" className="text-xs">Gann</TabsTrigger>
-                  <TabsTrigger value="ehlers" className="text-xs">Ehlers</TabsTrigger>
-                  <TabsTrigger value="other" className="text-xs">Other</TabsTrigger>
-                </TabsList>
-                <TabsContent value="gann" className="space-y-2">
-                  {overlays.filter(o => o.category === "gann").map(overlay => (
-                    <div key={overlay.key} className="flex items-center justify-between">
-                      <Label htmlFor={overlay.key} className="text-sm text-muted-foreground">
-                        {overlay.name}
-                      </Label>
-                      <Switch
-                        id={overlay.key}
-                        checked={activeOverlays[overlay.key]}
-                        onCheckedChange={() => toggleOverlay(overlay.key)}
-                      />
-                    </div>
-                  ))}
-                </TabsContent>
-                <TabsContent value="ehlers" className="space-y-2">
-                  {overlays.filter(o => o.category === "ehlers").map(overlay => (
-                    <div key={overlay.key} className="flex items-center justify-between">
-                      <Label htmlFor={overlay.key} className="text-sm text-muted-foreground">
-                        {overlay.name}
-                      </Label>
-                      <Switch
-                        id={overlay.key}
-                        checked={activeOverlays[overlay.key]}
-                        onCheckedChange={() => toggleOverlay(overlay.key)}
-                      />
-                    </div>
-                  ))}
-                </TabsContent>
-                <TabsContent value="other" className="space-y-2">
-                  {overlays.filter(o => !["gann", "ehlers"].includes(o.category)).map(overlay => (
-                    <div key={overlay.key} className="flex items-center justify-between">
-                      <Label htmlFor={overlay.key} className="text-sm text-muted-foreground">
-                        {overlay.name}
-                      </Label>
-                      <Switch
-                        id={overlay.key}
-                        checked={activeOverlays[overlay.key]}
-                        onCheckedChange={() => toggleOverlay(overlay.key)}
-                      />
-                    </div>
-                  ))}
-                </TabsContent>
-              </Tabs>
             </Card>
           </div>
         )}
