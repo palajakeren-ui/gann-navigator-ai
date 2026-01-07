@@ -2,15 +2,11 @@ import { TradingChart } from "@/components/charts/TradingChart";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { 
-  TrendingUp, TrendingDown, Activity, Target, Layers, 
+  TrendingUp, TrendingDown, Target, Layers, 
   ZoomIn, ZoomOut, Maximize2, Download, RefreshCw,
-  Settings, Crosshair, PenTool, Square, Circle, 
+  Crosshair, PenTool, Square, Circle, 
   TrendingUp as TrendLine, Type, Trash2, Undo, Redo,
   Grid, LayoutGrid, Columns
 } from "lucide-react";
@@ -73,7 +69,7 @@ const Charts = () => {
   );
 
   // Use live data hook
-  const { marketData, gannLevels, nearestSupport, nearestResistance, timeCycles, ehlersData, refresh } = useLiveData({
+  const { marketData, gannLevels, timeCycles, ehlersData, refresh } = useLiveData({
     symbol: activeSymbol,
     basePrice: 104525
   });

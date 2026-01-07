@@ -10,8 +10,8 @@ interface Planet {
 }
 
 interface PlanetaryPanelProps {
-  bullishAspects: { aspect: string; score: number }[];
-  bearishAspects: { aspect: string; score: number }[];
+  bullishAspects: { aspect: string; score: number | string }[];
+  bearishAspects: { aspect: string; score: number | string }[];
   totalScore: number;
   planets: Planet[];
   retrograde: { planet: string; period: string; note: string }[];
@@ -48,7 +48,7 @@ export const PlanetaryPanel = ({
             {bullishAspects.map((aspect, idx) => (
               <div key={idx} className="text-xs bg-bullish/10 text-bullish px-2 py-1.5 rounded flex justify-between">
                 <span>{aspect.aspect}</span>
-                <span className="font-semibold">+{aspect.score.toFixed(2)}</span>
+                <span className="font-semibold">+{typeof aspect.score === 'number' ? aspect.score.toFixed(2) : aspect.score}</span>
               </div>
             ))}
           </div>
@@ -62,7 +62,7 @@ export const PlanetaryPanel = ({
             {bearishAspects.map((aspect, idx) => (
               <div key={idx} className="text-xs bg-bearish/10 text-bearish px-2 py-1.5 rounded flex justify-between">
                 <span>{aspect.aspect}</span>
-                <span className="font-semibold">{aspect.score.toFixed(2)}</span>
+                <span className="font-semibold">{typeof aspect.score === 'number' ? aspect.score.toFixed(2) : aspect.score}</span>
               </div>
             ))}
           </div>

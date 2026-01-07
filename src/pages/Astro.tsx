@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   Moon, Sun, Star, Telescope, Calendar, Clock, 
   TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
-  CircleDot, Orbit
+  Orbit
 } from "lucide-react";
 import { useState } from "react";
 import { useLiveData } from "@/hooks/useLiveData";
@@ -17,12 +17,12 @@ import AstroSummaryCard from "@/components/dashboard/AstroSummaryCard";
 const Astro = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
-  const { astroData, timeCycles, marketData, refresh } = useLiveData({
+  const { astroData, timeCycles, refresh } = useLiveData({
     symbol: 'BTCUSDT',
     basePrice: 104525
   });
 
-  const totalScore = astroData.marketSentiment.strength;
+  const totalScore = astroData.sentiment.strength;
   const bullishCount = astroData.aspects.filter(a => a.influence > 0).length;
   const bearishCount = astroData.aspects.filter(a => a.influence < 0).length;
 
@@ -52,7 +52,7 @@ const Astro = () => {
             {astroData.planets[0]?.sign || 'Sagittarius'} {astroData.planets[0]?.degree?.toFixed(0) || 21}°
           </p>
           <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-            {astroData.marketSentiment.direction === 'bullish' ? 'Bullish Phase' : 'Bearish Phase'}
+            {astroData.sentiment.direction === 'bullish' ? 'Bullish Phase' : 'Bearish Phase'}
           </Badge>
         </Card>
 
@@ -61,7 +61,7 @@ const Astro = () => {
           <h3 className="font-bold text-foreground mb-2">Lunar Phase</h3>
           <p className="text-2xl font-bold gradient-text mb-1">{astroData.lunarPhase.name}</p>
           <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20">
-            {(astroData.lunarPhase.illumination * 100).toFixed(0)}% Illumination
+            {astroData.lunarPhase.illumination}% Illumination
           </Badge>
         </Card>
 
@@ -79,7 +79,7 @@ const Astro = () => {
         <Card className="p-6 glass-card text-center animate-scale-in" style={{ animationDelay: '300ms' }}>
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-warning" />
           <h3 className="font-bold text-foreground mb-2">Retrogrades</h3>
-          <p className="text-2xl font-bold text-warning mb-1">{astroData.retrogrades.length}</p>
+          <p className="text-2xl font-bold text-warning mb-1">{astroData.retrogrades.filter(r => r.isRetrograde).length}</p>
           <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
             Active Now
           </Badge>
@@ -114,7 +114,7 @@ const Astro = () => {
                 degree: p.degree,
                 note: p.retrograde ? 'Retrograde' : 'Direct'
               }))}
-              retrograde={astroData.retrogrades.map(r => ({
+              retrograde={astroData.retrogrades.filter(r => r.isRetrograde).map(r => ({
                 planet: r.planet,
                 period: `Until ${r.endDate?.toLocaleDateString() || 'N/A'}`,
                 note: r.impact
@@ -123,7 +123,6 @@ const Astro = () => {
 
             <AstroSummaryCard 
               astroData={astroData}
-              timeCycles={timeCycles}
             />
           </div>
         </TabsContent>
@@ -214,7 +213,7 @@ const Astro = () => {
                 <Moon className="w-16 h-16 mx-auto mb-4 text-blue-400" />
                 <p className="text-2xl font-bold text-foreground mb-2">{astroData.lunarPhase.name}</p>
                 <p className="text-lg text-muted-foreground mb-4">
-                  {(astroData.lunarPhase.illumination * 100).toFixed(0)}% Illumination
+                  {astroData.lunarPhase.illumination}% Illumination
                 </p>
                 <Badge variant="outline" className={astroData.lunarPhase.influence > 0 ? "text-success border-success" : "text-destructive border-destructive"}>
                   {astroData.lunarPhase.influence > 0 ? 'Bullish Influence' : 'Bearish Influence'}
@@ -227,11 +226,11 @@ const Astro = () => {
               <div className="p-4 bg-secondary/30 rounded-lg text-center">
                 <Clock className="w-12 h-12 mx-auto mb-3 text-primary" />
                 <p className="text-xl font-bold text-foreground mb-1">
-                  {astroData.planetaryHours.currentHour}
+                  {astroData.currentHour?.planet || 'Sun'}
                 </p>
                 <p className="text-sm text-muted-foreground">Current Planetary Hour</p>
-                <Badge variant="outline" className={astroData.planetaryHours.isFavorable ? "mt-3 text-success border-success" : "mt-3 text-warning border-warning"}>
-                  {astroData.planetaryHours.isFavorable ? 'Favorable for Trading' : 'Caution Advised'}
+                <Badge variant="outline" className={astroData.currentHour?.isFavorable ? "mt-3 text-success border-success" : "mt-3 text-warning border-warning"}>
+                  {astroData.currentHour?.isFavorable ? 'Favorable for Trading' : 'Caution Advised'}
                 </Badge>
               </div>
             </Card>
@@ -262,7 +261,7 @@ const Astro = () => {
             </div>
 
             <div className="space-y-3">
-              {timeCycles.activeCycles?.map((cycle, idx) => (
+              {timeCycles.activeCycles?.map((cycle) => (
                 <div key={cycle.name} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                   <div>
                     <p className="font-semibold text-foreground">{cycle.name}</p>
