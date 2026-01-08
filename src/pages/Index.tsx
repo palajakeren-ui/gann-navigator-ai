@@ -360,8 +360,8 @@ const Index = () => {
         <TabsContent value="analysis" className="space-y-4 mt-4">
           <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 md:mb-4">Visual Gann Analysis Tools</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <GannSquareChart />
-            <GannWheelChart />
+            <GannSquareChart centerValue={marketData.price} />
+            <GannWheelChart currentPrice={marketData.price} />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <GannFanChart />
